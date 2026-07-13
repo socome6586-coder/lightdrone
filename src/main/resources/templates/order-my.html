@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('내 주문 내역')}"></th:block>
+    <style>
+        .order-history-card {
+            border: 1px solid #e7ecf2;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(15, 23, 42, .05) !important;
+            overflow: hidden;
+        }
+        .order-history-card .card-header {
+            background: #fff;
+            padding: 12px 16px;
+            border-bottom: 1px solid #eef2f7;
+        }
+        .order-history-card .card-body {
+            padding: 16px;
+        }
+        .order-status-text {
+            font-size: .88rem;
+            font-weight: 800;
+            letter-spacing: -.02em;
+        }
+        .order-status-text.pending { color: #d97706; }
+        .order-status-text.confirmed,
+        .order-status-text.shipping,
+        .order-status-text.delivered { color: #2563eb; }
+        .order-status-text.cancelled,
+        .order-status-text.rejected { color: #dc2626; }
+        .order-status-text.refund { color: #7c3aed; }
+        /* 주문 거절 안내 — 빨간 박스 대신 좌측 라인 강조의 담백한 노트 */
+        .order-reject-note {
+            border-left: 3px solid #e15b5b;
+            padding: 2px 0 2px 12px;
+            margin-left: 1px;
+            font-size: .84rem;
+        }
+        .order-reject-note .orn-head {
+            display: flex; align-items: center; gap: 6px;
+            font-weight: 700; color: #c0392b; margin-bottom: 4px;
+        }
+        .order-reject-note .orn-head i { font-size: .95rem; }
+        .order-reject-note .orn-row {
+            display: flex; gap: 8px; line-height: 1.6;
+        }
+        .order-reject-note .orn-label {
+            color: #9aa0aa; min-width: 52px; flex-shrink: 0;
+        }
+        .order-reject-note .orn-value { color: #4b5563; }
+        .order-reject-note .orn-tel {
+            color: #c0392b; font-weight: 700; text-decoration: none;
+        }
+        .order-reject-note .orn-tel:hover { text-decoration: underline; }
+        .order-action-btn {
+            border-radius: 0 !important;
+            padding: 6px 11px !important;
+            font-size: .84rem !important;
+            font-weight: 500 !important;
+            line-height: 1.2 !important;
+            box-shadow: none !important;
+            letter-spacing: -.01em;
+            background: #fff;
+            min-height: 31px;
+        }
+        .order-action-btn.btn-outline-primary {
+            color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        .order-action-btn.btn-outline-primary:hover {
+            color: #fff;
+            background: #0d6efd;
+        }
+        .order-action-btn.btn-outline-danger {
+            color: #dc2626;
+            border-color: #dc2626;
+        }
+        .order-action-btn.btn-outline-danger:hover {
+            color: #fff;
+            background: #dc2626;
+        }
+        .order-action-btn.btn-outline-warning {
+            color: #b45309;
+            border-color: #d97706;
+        }
+        .order-action-btn.btn-outline-warning:hover {
+            color: #fff;
+            background: #d97706;
+            border-color: #d97706;
+        }
+        /* 주문 액션(주문 확인 | 취소) 텍스트 스타일 */
+        .order-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            flex-wrap: wrap;
+        }
+        .order-actions > form { display: inline-flex; margin: 0; padding: 0; }
+        .order-actions .oa-btn {
+            border: none;
+            background: none;
+            padding: 2px 1px;
+            font-size: .86rem;
+            font-weight: 700;
+            line-height: 1.35;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: opacity .12s ease;
+        }
+        .order-actions .oa-btn:hover { text-decoration: underline; }
+        .order-actions .oa-sep { color: #d2d7e0; font-size: .82rem; user-select: none; }
+        .order-actions .oa-confirm { color: #0d6efd; }
+        .order-actions .oa-cancel,
+        .order-actions .oa-del { color: #dc2626; }
+        .order-actions .oa-refund { color: #b45309; }
+        .order-detail-modal {
+            z-index: 12020 !important;
+            padding-top: 88px !important;
+            padding-bottom: 24px !important;
+            overflow-y: auto !important;
+        }
+        .modal-backdrop.show {
+            z-index: 12010 !important;
+        }
+        .order-detail-modal .modal-dialog {
+            margin: 0 auto !important;
+            min-height: calc(100vh - 112px);
+            display: flex;
+            align-items: flex-start;
+        }
+        .order-detail-modal .modal-content {
+            border-radius: 16px;
+            overflow: hidden;
+            width: 100%;
+            max-height: calc(100vh - 112px);
+        }
+        .order-detail-modal .modal-header,
+        .order-detail-modal .modal-footer {
+            padding: 14px 18px;
+        }
+        .order-detail-modal .modal-body {
+            padding: 18px;
+            max-height: calc(100vh - 220px);
+            overflow-y: auto;
+        }
+        .order-detail-section-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #475569;
+            border-bottom: 1px solid #e8edf4;
+            padding-bottom: 10px;
+            margin-bottom: 14px;
+        }
+        .order-detail-modal .table thead th {
+            white-space: nowrap;
+        }
+        @media (max-width: 576px) {
+            .order-detail-modal {
+                padding-top: 142px !important;
+                padding-bottom: 16px !important;
+            }
+            .order-detail-modal .modal-dialog {
+                min-height: calc(100vh - 158px);
+            }
+            .order-detail-modal .modal-content {
+                max-height: calc(100vh - 158px);
+            }
+            .order-detail-modal .modal-body {
+                max-height: calc(100vh - 250px);
+                padding: 14px;
+            }
+            .order-action-btn {
+                padding: 7px 10px !important;
+                font-size: .8rem !important;
+            }
+        }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<div class="page-header">
+    <div class="page-header-overlay"></div>
+    <div class="container text-center text-white position-relative">
+        <h1 class="display-5 fw-bold">내 주문 내역</h1>
+    </div>
+</div>
+
+<section class="section-padding">
+    <div class="container">
+        <div class="row g-4">
+            <th:block th:replace="~{layout/fragments :: mypageSidebar('order')}"></th:block>
+            <div class="col-md-9">
+
+                <div th:if="${successMsg}" class="alert alert-success"><span th:text="${successMsg}"></span></div>
+                <div th:if="${errorMsg}" class="alert alert-danger"><span th:text="${errorMsg}"></span></div>
+
+                <div th:if="${#lists.isEmpty(orders) and (customPayments == null or #lists.isEmpty(customPayments))}" class="text-center py-5">
+                    <i class="bi bi-bag-x text-muted" style="font-size:4rem;"></i>
+                    <h5 class="mt-3 text-muted">주문 내역이 없습니다.</h5>
+                    <a th:href="@{/products}" class="btn btn-primary mt-2">상품 보러가기</a>
+                </div>
+
+                <th:block th:each="order : ${orders}">
+                    <div class="card border-0 shadow-sm mb-3 order-history-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span class="small text-muted" th:text="${#temporals.format(order.createdAt,'yyyy.MM.dd HH:mm')}"></span>
+                            <span class="order-status-text"
+                                  th:classappend="${order.status.name() == 'DELIVERED'} ? ' delivered' :
+                                                  (${order.status.name() == 'CANCELLED'} ? ' cancelled' :
+                                                  (${order.status.name() == 'REJECTED'} ? ' rejected' :
+                                                  (${order.status.name() == 'SHIPPING'} ? ' shipping' :
+                                                  (${order.status.name() == 'CONFIRMED'} ? ' confirmed' : ' pending'))))"
+                                  th:text="${order.status.label}"></span>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <div class="fw-bold small mb-1" th:text="${order.orderNumber}"></div>
+                                    <div th:each="item,s : ${order.items}" class="text-muted small"
+                                         th:text="${item.productName + ' × ' + item.quantity + (s.last ? '' : ', ')}"></div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold text-primary" th:text="${#numbers.formatInteger(order.totalPrice,0,'COMMA') + '원'}"></div>
+                                    <div class="text-muted small" th:text="${order.paymentMethod.label}"></div>
+                                </div>
+                            </div>
+
+                            <div th:if="${order.status.name() == 'REJECTED'}" class="order-reject-note mt-2 mb-1">
+                                <div class="orn-head"><i class="bi bi-slash-circle"></i><span>주문이 거절되었습니다</span></div>
+                                <div th:if="${order.rejectReason != null and !#strings.isEmpty(order.rejectReason)}" class="orn-row">
+                                    <span class="orn-label">거절 사유</span><span class="orn-value" th:text="${order.rejectReason}"></span>
+                                </div>
+                                <div class="orn-row">
+                                    <span class="orn-label">문의</span><a href="tel:010-3565-9741" class="orn-tel">010-3565-9741</a>
+                                </div>
+                            </div>
+
+                            <div th:if="${(order.status.name() == 'SHIPPING' or order.status.name() == 'DELIVERED')
+                                          and order.trackingNumber != null and !#strings.isEmpty(order.trackingNumber)}"
+                                 class="alert alert-info py-2 px-3 small mt-2 mb-1 d-flex align-items-center gap-2">
+                                <i class="bi bi-truck-front-fill text-info"></i>
+                                <span><strong th:text="${order.courierCompany}"></strong> 송장번호 <strong th:text="${order.trackingNumber}"></strong></span>
+                                <a th:href="${order.courierCompany == 'CJ대한통운'
+                                              ? 'https://trace.cjlogistics.com/next/tracking.html?wblNo=' + order.trackingNumber
+                                              : (order.courierCompany == '로젠택배'
+                                              ? 'https://www.ilogen.com/web/personal/trace/' + order.trackingNumber
+                                              : (order.courierCompany == '한진택배'
+                                              ? 'https://www.hanjin.com/kor/CMS/DeliveryMgr/WaybillSch.do?mCode=MN038&schLang=KR&wblnumText2=' + order.trackingNumber
+                                              : (order.courierCompany == '우체국택배'
+                                              ? 'https://service.epost.go.kr/trace.RetrieveRegiList.retrieve?sid1=' + order.trackingNumber
+                                              : (order.courierCompany == '롯데택배'
+                                              ? 'https://www.lotteglogis.com/home/reservation/tracking/linkView?InvNo=' + order.trackingNumber
+                                              : '#'))))}"
+                                   target="_blank" rel="noopener noreferrer"
+                                   class="btn btn-sm btn-info text-white ms-auto order-action-btn">
+                                    <i class="bi bi-search me-1"></i>배송 조회
+                                </a>
+                            </div>
+
+                            <div class="order-actions mt-2">
+                                <button type="button" class="oa-btn oa-confirm"
+                                        th:attr="data-bs-toggle='modal', data-bs-target='#orderModal-' + ${order.id}">주문 확인</button>
+
+                                <span class="oa-sep" aria-hidden="true"
+                                      th:if="${order.status.name() == 'PENDING_PAYMENT'}">|</span>
+                                <form th:if="${order.status.name() == 'PENDING_PAYMENT'}"
+                                      th:action="@{/order/{id}/cancel(id=${order.id})}" method="post"
+                                      onsubmit="return confirm('주문을 취소하시겠습니까?')">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                    <button type="submit" class="oa-btn oa-cancel">주문 취소</button>
+                                </form>
+
+                                <span class="oa-sep" aria-hidden="true"
+                                      th:if="${order.status.name() == 'DELIVERED' and (order.refundStatus == null or order.refundStatus.name() == 'NONE')}">|</span>
+                                <button th:if="${order.status.name() == 'DELIVERED' and (order.refundStatus == null or order.refundStatus.name() == 'NONE')}"
+                                        type="button" class="oa-btn oa-refund"
+                                        th:attr="data-bs-toggle='modal', data-bs-target='#refundModal-' + ${order.id}">환불/반품</button>
+
+                                <span class="oa-sep" aria-hidden="true"
+                                      th:if="${order.refundStatus != null and order.refundStatus.name() != 'NONE'}">|</span>
+                                <span th:if="${order.refundStatus != null and order.refundStatus.name() != 'NONE'}"
+                                      class="order-status-text refund"
+                                      th:text="${order.refundStatus.label}"></span>
+
+                                <span class="oa-sep" aria-hidden="true"
+                                      th:if="${order.status.name() == 'REJECTED' or order.status.name() == 'CANCELLED'}">|</span>
+                                <form th:if="${order.status.name() == 'REJECTED' or order.status.name() == 'CANCELLED'}"
+                                      th:action="@{/order/{id}/delete(id=${order.id})}" method="post"
+                                      onsubmit="return confirm('이 주문 내역을 삭제하시겠습니까?\n삭제 후 복구할 수 없습니다.')">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                    <button type="submit" class="oa-btn oa-del">내역 삭제</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" th:id="'refundModal-' + ${order.id}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">
+                                        <i class="bi bi-arrow-return-left me-2 text-warning"></i>환불/반품 요청
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form th:action="@{/order/{id}/refund(id=${order.id})}" method="post">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                    <div class="modal-body">
+                                        <p class="small text-muted mb-3">
+                                            배송 완료 후 7일 이내 환불/반품 요청이 가능합니다.<br>
+                                            요청 내용을 확인 후 처리 안내를 드립니다.
+                                        </p>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold small">요청 사유 <span class="text-danger">*</span></label>
+                                            <textarea name="refundReason" class="form-control" rows="4"
+                                                      placeholder="환불/반품 사유를 상세히 입력해 주세요." required
+                                                      style="resize:vertical;"></textarea>
+                                        </div>
+                                        <div class="alert alert-info small mb-0">
+                                            <i class="bi bi-telephone me-1"></i>
+                                            빠른 처리를 원하시면 <strong>010-3565-9741</strong>로 연락 주세요.
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                                        <button type="submit" class="btn btn-warning">
+                                            <i class="bi bi-send me-1"></i>요청하기
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade order-detail-modal" th:id="'orderModal-' + ${order.id}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">
+                                        <i class="bi bi-file-earmark-text me-2 text-primary"></i>주문 상세 정보
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-4">
+                                        <h6 class="order-detail-section-title"><i class="bi bi-receipt me-1"></i>주문 정보</h6>
+                                        <div class="row g-2 small">
+                                            <div class="col-4 text-muted">주문번호</div>
+                                            <div class="col-8 fw-semibold" th:text="${order.orderNumber}"></div>
+                                            <div class="col-4 text-muted">주문일시</div>
+                                            <div class="col-8" th:text="${#temporals.format(order.createdAt,'yyyy년 MM월 dd일 HH:mm')}"></div>
+                                            <div class="col-4 text-muted">주문 상태</div>
+                                            <div class="col-8">
+                                                <span class="order-status-text"
+                                                      th:classappend="${order.status.name() == 'DELIVERED'} ? ' delivered' :
+                                                                      (${order.status.name() == 'CANCELLED'} ? ' cancelled' :
+                                                                      (${order.status.name() == 'REJECTED'} ? ' rejected' :
+                                                                      (${order.status.name() == 'SHIPPING'} ? ' shipping' :
+                                                                      (${order.status.name() == 'CONFIRMED'} ? ' confirmed' : ' pending'))))"
+                                                      th:text="${order.status.label}"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <h6 class="order-detail-section-title"><i class="bi bi-box-seam me-1"></i>주문 상품</h6>
+                                        <table class="table table-sm table-borderless small mb-0">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>상품명</th>
+                                                <th class="text-center">수량</th>
+                                                <th class="text-end">단가</th>
+                                                <th class="text-end">합계</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr th:each="item : ${order.items}">
+                                                <td th:text="${item.productName}"></td>
+                                                <td class="text-center" th:text="${item.quantity}"></td>
+                                                <td class="text-end" th:text="${#numbers.formatInteger(item.productPrice,0,'COMMA') + '원'}"></td>
+                                                <td class="text-end fw-semibold" th:text="${#numbers.formatInteger(item.productPrice * item.quantity,0,'COMMA') + '원'}"></td>
+                                            </tr>
+                                            </tbody>
+                                            <tfoot class="border-top">
+                                            <tr>
+                                                <td colspan="3" class="text-end text-muted">배송비</td>
+                                                <td class="text-end text-muted"
+                                                    th:text="${order.shippingFee != null ? #numbers.formatInteger(order.shippingFee,0,'COMMA') + '원' : '0원'}"></td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="3" class="text-end fw-bold">총 결제금액</td>
+                                                <td class="text-end fw-bold text-primary" th:text="${#numbers.formatInteger(order.totalPrice,0,'COMMA') + '원'}"></td>
+                                            </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <h6 class="order-detail-section-title"><i class="bi bi-person me-1"></i>구매자 정보</h6>
+                                        <div class="row g-2 small">
+                                            <div class="col-4 text-muted">이름</div>
+                                            <div class="col-8" th:text="${order.buyerName}"></div>
+                                            <div class="col-4 text-muted">연락처</div>
+                                            <div class="col-8" th:text="${order.buyerPhone}"></div>
+                                            <div class="col-4 text-muted">이메일</div>
+                                            <div class="col-8" th:text="${order.buyerEmail != null and !#strings.isEmpty(order.buyerEmail) ? order.buyerEmail : '-'}"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <h6 class="order-detail-section-title"><i class="bi bi-truck me-1"></i>배송지 정보</h6>
+                                        <div class="row g-2 small">
+                                            <div class="col-4 text-muted">수령인</div>
+                                            <div class="col-8" th:text="${order.receiverName}"></div>
+                                            <div class="col-4 text-muted">연락처</div>
+                                            <div class="col-8" th:text="${order.receiverPhone}"></div>
+                                            <div class="col-4 text-muted">주소</div>
+                                            <div class="col-8">
+                                                <span th:if="${order.zipCode != null and !#strings.isEmpty(order.zipCode)}"
+                                                      th:text="'[' + ${order.zipCode} + '] '" class="text-muted"></span>
+                                                <span th:text="${order.address}"></span>
+                                                <span th:if="${order.addressDetail != null and !#strings.isEmpty(order.addressDetail)}"
+                                                      th:text="' ' + ${order.addressDetail}"></span>
+                                            </div>
+                                            <div class="col-4 text-muted">배송 메시지</div>
+                                            <div class="col-8" th:text="${order.deliveryMessage != null and !#strings.isEmpty(order.deliveryMessage) ? order.deliveryMessage : '-'}"></div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h6 class="order-detail-section-title"><i class="bi bi-credit-card me-1"></i>결제 정보</h6>
+                                        <div class="row g-2 small">
+                                            <div class="col-4 text-muted">결제 수단</div>
+                                            <div class="col-8" th:text="${order.paymentMethod.label}"></div>
+                                            <div class="col-4 text-muted">결제 상태</div>
+                                            <div class="col-8">
+                                                <span class="order-status-text"
+                                                      th:classappend="${order.status.name() == 'DELIVERED'} ? ' delivered' :
+                                                                      (${order.status.name() == 'CANCELLED'} ? ' cancelled' :
+                                                                      (${order.status.name() == 'REJECTED'} ? ' rejected' :
+                                                                      (${order.status.name() == 'SHIPPING'} ? ' shipping' :
+                                                                      (${order.status.name() == 'CONFIRMED'} ? ' confirmed' : ' pending'))))"
+                                                      th:text="${order.status.label}"></span>
+                                            </div>
+                                            <div class="col-4 text-muted">결제 금액</div>
+                                            <div class="col-8 fw-bold text-primary" th:text="${#numbers.formatInteger(order.totalPrice,0,'COMMA') + '원'}"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary order-action-btn" data-bs-dismiss="modal">닫기</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </th:block>
+
+                <th:block th:if="${customPayments != null and !#lists.isEmpty(customPayments)}">
+                    <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-credit-card-2-front me-2 text-primary"></i>맞춤결제 내역</h5>
+                    <div class="card border-0 shadow-sm mb-3 order-history-card" th:each="cp : ${customPayments}">
+                        <div class="card-body d-flex align-items-center gap-3">
+                            <img th:src="${cp.imageUrlOrDefault}" alt=""
+                                 style="width:56px;height:56px;object-fit:cover;border-radius:6px;flex-shrink:0;">
+                            <div class="flex-grow-1">
+                                <div class="fw-bold" th:text="${cp.name + ' 외'}">구매 상품</div>
+                                <div class="text-muted small">
+                                    맞춤결제코드 <span th:text="${cp.code}">0000</span> · 배송 <span th:text="${cp.deliveryMethod}">택배</span>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold text-primary" th:text="${#numbers.formatInteger(cp.price,0,'COMMA') + '원'}">0원</div>
+                                <span th:if="${cp.status.name() == 'PAID'}" class="order-status-text confirmed">결제완료</span>
+                                <span th:unless="${cp.status.name() == 'PAID'}" class="order-status-text pending">미결제</span>
+                            </div>
+                        </div>
+                    </div>
+                </th:block>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

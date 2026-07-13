@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('상품 관리')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+    <style>
+        /* 카테고리 필터 칩 (이 페이지 전용) */
+        .product-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .product-filter .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid transparent;
+            background: rgba(148, 163, 184, 0.12);
+            color: var(--admin-muted);
+            transition: .15s ease;
+        }
+        .product-filter .filter-chip:hover {
+            background: rgba(77, 111, 220, 0.12);
+            color: var(--admin-primary);
+        }
+        .product-filter .filter-chip.is-active {
+            background: linear-gradient(135deg, var(--admin-primary), var(--admin-accent));
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.20);
+        }
+        .subcategory-filter {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 7px;
+            margin-top: 10px;
+        }
+        .subcategory-filter .sub-filter-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--admin-muted);
+            margin-right: 2px;
+        }
+        .subcategory-filter .sub-filter-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 11px;
+            border-radius: 8px;
+            font-size: 0.77rem;
+            font-weight: 700;
+            text-decoration: none;
+            background: rgba(14, 165, 233, 0.10);
+            color: #0284c7;
+            border: 1px solid rgba(14, 165, 233, 0.12);
+            transition: .12s ease;
+        }
+        .subcategory-filter .sub-filter-chip:hover {
+            background: rgba(14, 165, 233, 0.16);
+            color: #0369a1;
+        }
+        .subcategory-filter .sub-filter-chip.is-active {
+            background: #0284c7;
+            border-color: #0284c7;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.18);
+        }
+
+        /* 세부 카테고리 태그 - 부드러운 톤 */
+        .subcat-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 7px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            background: rgba(14, 165, 233, 0.12);
+            color: #0284c7;
+        }
+
+        /* 노출 상태 - 박스 대신 점 + 텍스트 */
+        .status-dot {
+            font-size: 0.82rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .status-dot::before {
+            content: "";
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: 1px;
+            background: currentColor;
+        }
+        .status-on { color: #16a34a; }
+        .status-off { color: #94a3b8; }
+
+        /* 관리 버튼 - 네모 3칸 붙임(세그먼트) */
+        .product-actions {
+            display: inline-flex;
+            align-items: stretch;
+        }
+        .product-actions > form {
+            margin: 0;
+            display: inline-flex;
+        }
+        .product-actions .pa-btn {
+            border: 1px solid;
+            background: #fff;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 4px 13px;
+            line-height: 1.5;
+            border-radius: 0;
+            margin-left: -1px;
+            cursor: pointer;
+            text-decoration: none;
+            position: relative;
+            transition: .12s ease;
+        }
+        .product-actions > a.pa-btn:first-child {
+            margin-left: 0;
+            border-top-left-radius: 7px;
+            border-bottom-left-radius: 7px;
+        }
+        .product-actions > form:last-child .pa-btn {
+            border-top-right-radius: 7px;
+            border-bottom-right-radius: 7px;
+        }
+        .product-actions .pa-btn:hover { z-index: 2; }
+        .pa-edit { color: var(--admin-primary); border-color: rgba(77, 111, 220, 0.5); }
+        .pa-edit:hover { background: var(--admin-primary); color: #fff; border-color: var(--admin-primary); }
+        .pa-copy { color: #16a34a; border-color: rgba(22, 163, 74, 0.5); }
+        .pa-copy:hover { background: #16a34a; color: #fff; border-color: #16a34a; }
+        .pa-del { color: #dc2626; border-color: rgba(220, 38, 38, 0.5); }
+        .pa-del:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
+    </style>
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('products')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('상품 등록 / 관리', '상품 검색, 카테고리 필터, 노출 상태와 재고를 한 화면에서 관리합니다.')}"></th:block>
+
+        <div class="admin-section-grid">
+            <div th:if="${successMsg}" class="alert alert-success"><i class="bi bi-check-circle me-2"></i><span th:text="${successMsg}"></span></div>
+            <div th:if="${errorMsg}" class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i><span th:text="${errorMsg}"></span></div>
+
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">상품 목록</h3>
+                        <div class="admin-panel-subtitle">
+                            <span th:text="${(selectedCategory != null and !#strings.isEmpty(selectedCategory)) ? selectedCategory + ((selectedSubcategory != null and !#strings.isEmpty(selectedSubcategory)) ? ' > ' + selectedSubcategory : '') + ' 상품' : '전체 상품'}"></span>
+                            · 총 <span th:text="${productPage.totalElements}">0</span>개
+                        </div>
+                    </div>
+                    <a th:href="@{/admin/products/new}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>상품 등록
+                    </a>
+                </div>
+                <div class="admin-panel-body">
+                    <div class="admin-console-toolbar">
+                        <form th:action="@{/admin/products}" method="get" class="d-flex gap-2 flex-wrap">
+                            <input type="hidden" name="category" th:if="${selectedCategory != null and !#strings.isEmpty(selectedCategory)}" th:value="${selectedCategory}">
+                            <input type="hidden" name="subcategory" th:if="${selectedSubcategory != null and !#strings.isEmpty(selectedSubcategory)}" th:value="${selectedSubcategory}">
+                            <input type="text" name="keyword" class="form-control" style="min-width:280px;"
+                                   placeholder="상품명 또는 상품코드를 검색하세요"
+                                   th:value="${keyword}">
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>검색</button>
+                            <a th:if="${keyword != null and !#strings.isEmpty(keyword)}"
+                               th:href="@{/admin/products(category=${selectedCategory}, subcategory=${selectedSubcategory})}"
+                               class="btn btn-outline-secondary">초기화</a>
+                        </form>
+
+                        <div>
+                            <div class="product-filter">
+                                <a th:href="@{/admin/products(keyword=${keyword})}"
+                                   th:classappend="${selectedCategory == null or #strings.isEmpty(selectedCategory)} ? 'is-active' : ''"
+                                   class="filter-chip">전체</a>
+                                <a th:each="cat : ${categories}"
+                                   th:href="@{/admin/products(category=${cat.name}, keyword=${keyword})}"
+                                   th:classappend="${cat.name == selectedCategory} ? 'is-active' : ''"
+                                   class="filter-chip"
+                                   th:text="${cat.name}">카테고리</a>
+                            </div>
+                            <div class="subcategory-filter"
+                                 th:if="${selectedCategory != null and !#strings.isEmpty(selectedCategory) and subcategories != null and !subcategories.isEmpty()}">
+                                <span class="sub-filter-label">세부</span>
+                                <a th:href="@{/admin/products(category=${selectedCategory}, keyword=${keyword})}"
+                                   th:classappend="${selectedSubcategory == null or #strings.isEmpty(selectedSubcategory)} ? 'is-active' : ''"
+                                   class="sub-filter-chip">전체</a>
+                                <a th:each="sub : ${subcategories}"
+                                   th:href="@{/admin/products(category=${selectedCategory}, subcategory=${sub}, keyword=${keyword})}"
+                                   th:classappend="${sub == selectedSubcategory} ? 'is-active' : ''"
+                                   class="sub-filter-chip"
+                                   th:text="${sub}">세부 카테고리</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table admin-console-table align-middle mb-0" style="table-layout:fixed;width:100%;">
+                            <colgroup>
+                                <col style="width:5%;">
+                                <col style="width:8%;">
+                                <col style="width:20%;">
+                                <col style="width:12%;">
+                                <col style="width:12%;">
+                                <col style="width:10%;">
+                                <col style="width:6%;">
+                                <col style="width:7%;">
+                                <col style="width:8%;">
+                                <col style="width:5%;">
+                                <col style="width:17%;">
+                            </colgroup>
+                            <thead>
+                            <tr>
+                                <th class="text-center">번호</th>
+                                <th class="text-center">이미지</th>
+                                <th>상품명</th>
+                                <th class="text-center">카테고리</th>
+                                <th class="text-center">세부 카테고리</th>
+                                <th class="text-end">가격</th>
+                                <th class="text-center">재고</th>
+                                <th class="text-center">노출</th>
+                                <th class="text-center">무료배송</th>
+                                <th class="text-center">순서</th>
+                                <th class="text-center">관리</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="p, stat : ${productPage.content}">
+                                <td class="text-center text-muted small"
+                                    th:text="${productPage.number * productPage.size + stat.count}"></td>
+                                <td class="text-center">
+                                    <img th:if="${p.imageUrl != null}" th:src="${p.imageUrl}" alt=""
+                                         class="rounded" style="width:44px;height:44px;object-fit:cover;">
+                                    <span th:unless="${p.imageUrl != null}" class="text-muted"><i class="bi bi-image" style="font-size:1.3rem;"></i></span>
+                                </td>
+                                <td class="small fw-semibold text-truncate">
+                                    <a th:href="@{/admin/products/{id}(id=${p.id})}" th:text="${p.name}" class="text-decoration-none text-dark"></a>
+                                </td>
+                                <td class="text-center">
+                                    <span th:each="cat : ${p.categories}" class="badge bg-light text-secondary border small me-1" th:text="${cat}"></span>
+                                    <span th:if="${p.categories == null or p.categories.isEmpty()}" class="text-muted small">-</span>
+                                </td>
+                                <td class="text-center">
+                                    <span th:if="${p.subcategory != null and !#strings.isEmpty(p.subcategory)}" class="subcat-tag" th:text="${p.subcategory}"></span>
+                                    <span th:unless="${p.subcategory != null and !#strings.isEmpty(p.subcategory)}" class="text-muted small">-</span>
+                                </td>
+                                <td class="text-end small" th:text="${#numbers.formatInteger(p.price, 0, 'COMMA') + '원'}"></td>
+                                <td class="text-center small" th:text="${p.stock}"></td>
+                                <td class="text-center">
+                                    <span class="status-dot" th:classappend="${p.available} ? 'status-on' : 'status-off'"
+                                          th:text="${p.available} ? '노출' : '숨김'"></span>
+                                </td>
+                                <td class="text-center">
+                                    <span th:if="${p.freeShipping}" class="badge bg-primary text-white small">무료</span>
+                                    <span th:unless="${p.freeShipping}" class="text-muted small">-</span>
+                                </td>
+                                <td class="text-center text-muted small" th:text="${p.sortOrder}"></td>
+                                <td class="text-center">
+                                    <div class="admin-actions">
+                                        <a th:href="@{/admin/products/{id}/edit(id=${p.id}, page=${productPage.number}, category=${selectedCategory}, subcategory=${selectedSubcategory}, keyword=${keyword})}" class="aa-btn aa-edit">수정</a>
+                                        <span class="aa-sep" aria-hidden="true">|</span>
+                                        <a th:href="@{/admin/products/{id}/copy(id=${p.id})}" class="aa-btn aa-copy">복사</a>
+                                        <span class="aa-sep" aria-hidden="true">|</span>
+                                        <form th:action="@{/admin/products/{id}/delete(id=${p.id})}" method="post"
+                                              onsubmit="return confirm('이 상품을 삭제하시겠습니까?')">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                            <input type="hidden" name="returnPage" th:value="${productPage.number}">
+                                            <input type="hidden" name="returnCategory" th:value="${selectedCategory}">
+                                            <input type="hidden" name="returnSubcategory" th:value="${selectedSubcategory}">
+                                            <input type="hidden" name="returnKeyword" th:value="${keyword}">
+                                            <button type="submit" class="aa-btn aa-del">삭제</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${productPage.totalElements == 0}">
+                                <td colspan="11" class="text-center text-muted py-4">등록된 상품이 없습니다.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <nav th:if="${productPage.totalPages > 1}" class="mt-4 d-flex justify-content-center"
+                         th:with="last=${productPage.totalPages - 1},
+                                  start=${T(java.lang.Math).max(0, productPage.number - 2)},
+                                  end=${T(java.lang.Math).min(productPage.totalPages - 1, productPage.number + 2)}">
+                        <ul class="pagination pagination-sm mb-0 flex-wrap">
+                            <li class="page-item" th:classappend="${productPage.first} ? 'disabled'">
+                                <a class="page-link" th:href="@{/admin/products(page=${productPage.number - 1}, category=${selectedCategory}, subcategory=${selectedSubcategory}, keyword=${keyword})}">이전</a>
+                            </li>
+
+                            <li class="page-item" th:if="${start > 0}">
+                                <a class="page-link" th:href="@{/admin/products(page=0, category=${selectedCategory}, subcategory=${selectedSubcategory}, keyword=${keyword})}">1</a>
+                            </li>
+                            <li class="page-item disabled" th:if="${start > 1}"><span class="page-link">…</span></li>
+
+                            <li class="page-item" th:each="i : ${#numbers.sequence(start, end)}"
+                                th:classappend="${i == productPage.number} ? 'active'">
+                                <a class="page-link" th:href="@{/admin/products(page=${i}, category=${selectedCategory}, subcategory=${selectedSubcategory}, keyword=${keyword})}" th:text="${i + 1}">1</a>
+                            </li>
+
+                            <li class="page-item disabled" th:if="${end < last - 1}"><span class="page-link">…</span></li>
+                            <li class="page-item" th:if="${end < last}">
+                                <a class="page-link" th:href="@{/admin/products(page=${last}, category=${selectedCategory}, subcategory=${selectedSubcategory}, keyword=${keyword})}" th:text="${last + 1}">N</a>
+                            </li>
+
+                            <li class="page-item" th:classappend="${productPage.last} ? 'disabled'">
+                                <a class="page-link" th:href="@{/admin/products(page=${productPage.number + 1}, category=${selectedCategory}, subcategory=${selectedSubcategory}, keyword=${keyword})}">다음</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+</body>
+</html>

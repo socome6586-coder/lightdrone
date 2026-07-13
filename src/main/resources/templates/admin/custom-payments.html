@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('맞춤결제 관리')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('custom-payments')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('맞춤결제 관리', '개별 결제 주문 상태와 취소, 정산 처리를 관리합니다.')}"></th:block>
+
+        <div class="admin-section-grid">
+            <div th:if="${successMsg}" class="alert alert-success mb-0"><span th:text="${successMsg}"></span></div>
+            <div th:if="${errorMsg}" class="alert alert-danger mb-0"><span th:text="${errorMsg}"></span></div>
+
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">맞춤결제 목록</h3>
+                        <div class="admin-panel-subtitle">총 <span th:text="${payments.size()}">0</span>건</div>
+                    </div>
+                    <a th:href="@{/admin/custom-payments/new}" class="btn btn-primary">맞춤결제 등록</a>
+                </div>
+
+                <div class="admin-panel-body">
+                    <div class="table-responsive">
+                        <table class="table admin-console-table align-middle mb-0">
+                            <thead>
+                            <tr>
+                                <th class="text-center">이미지</th>
+                                <th>상품명 / 업체명</th>
+                                <th class="text-center">코드</th>
+                                <th class="text-center">배송</th>
+                                <th class="text-end">금액</th>
+                                <th class="text-center">상태</th>
+                                <th class="text-center">관리</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:if="${payments.isEmpty()}">
+                                <td colspan="7">
+                                    <div class="admin-empty my-3">
+                                        <i class="bi bi-credit-card fs-3 d-block mb-2"></i>
+                                        등록된 맞춤결제가 없습니다.
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:each="cp : ${payments}">
+                                <td class="text-center">
+                                    <span class="admin-media-thumb">
+                                        <img th:src="${cp.imageUrlOrDefault}" alt="">
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold" th:text="${cp.name}">상품명</div>
+                                </td>
+                                <td class="text-center small" th:text="${cp.code}">CODE</td>
+                                <td class="text-center small" th:text="${cp.deliveryMethod}">택배</td>
+                                <td class="text-end fw-bold text-primary" th:text="${#numbers.formatInteger(cp.price, 0, 'COMMA') + '원'}">0원</td>
+                                <td class="text-center">
+                                    <span th:if="${cp.status.name() == 'PAID'}" class="admin-status-text done">결제완료</span>
+                                    <span th:if="${cp.status.name() == 'PENDING'}" class="admin-status-text pending">결제대기</span>
+                                    <span th:if="${cp.status.name() == 'CANCELLED'}" class="admin-status-text cancel">결제취소</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-inline-flex gap-1 flex-wrap justify-content-center">
+                                        <form th:if="${cp.status.name() == 'PENDING'}"
+                                              th:action="@{/admin/custom-payments/{id}/mark-paid(id=${cp.id})}" method="post"
+                                              class="d-inline" onsubmit="return confirm('결제완료로 변경하시겠습니까?');">
+                                            <button type="submit" class="btn btn-sm btn-success">완료 처리</button>
+                                        </form>
+                                        <form th:if="${cp.status.name() == 'PAID'}"
+                                              th:action="@{/admin/custom-payments/{id}/payment-cancel(id=${cp.id})}" method="post"
+                                              class="d-inline" onsubmit="return confirm('토스 결제를 전체 취소하시겠습니까?');">
+                                            <input type="hidden" name="cancelReason" value="관리자 맞춤결제 전체취소">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">토스 취소</button>
+                                        </form>
+                                        <form th:if="${cp.orderNumber != null and !#strings.isEmpty(cp.orderNumber)}"
+                                              th:action="@{/admin/custom-payments/{id}/payment-reconcile(id=${cp.id})}" method="post"
+                                              class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-info">정산 동기화</button>
+                                        </form>
+                                        <form th:if="${cp.status.name() == 'CANCELLED'}"
+                                              th:action="@{/admin/custom-payments/{id}/mark-pending(id=${cp.id})}" method="post"
+                                              class="d-inline" onsubmit="return confirm('다시 결제를 받을 수 있도록 결제대기로 바꿀까요?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">대기로 변경</button>
+                                        </form>
+                                        <span class="admin-actions">
+                                            <a th:href="@{/admin/custom-payments/{id}/edit(id=${cp.id})}" class="aa-btn aa-edit">수정</a>
+                                            <span class="aa-sep" aria-hidden="true">|</span>
+                                            <form th:action="@{/admin/custom-payments/{id}/delete(id=${cp.id})}" method="post"
+                                                  onsubmit="return confirm('삭제하시겠습니까?');">
+                                                <button type="submit" class="aa-btn aa-del">삭제</button>
+                                            </form>
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+</body>
+</html>

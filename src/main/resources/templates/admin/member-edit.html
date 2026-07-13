@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('회원 정보 수정')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('members')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('회원 정보 수정', '계정 정보, 권한, 등급, 상태를 관리자 콘솔에서 수정합니다.')}"></th:block>
+
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-7">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body p-4 d-flex align-items-center gap-3">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                 style="width:52px;height:52px;font-size:1.4rem;">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold" th:text="${member.username}">아이디</div>
+                                <div class="text-muted small">
+                                    가입일: <span th:text="${#temporals.format(member.createdAt,'yyyy.MM.dd')}"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <form th:action="@{/admin/members/{id}/edit(id=${member.id})}" method="post" th:object="${memberDto}">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">이름 <span class="text-danger">*</span></label>
+                                        <input type="text" th:field="*{name}" class="form-control"
+                                               th:classappend="${#fields.hasErrors('name')} ? 'is-invalid'">
+                                        <div class="invalid-feedback" th:errors="*{name}"></div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">연락처</label>
+                                        <input type="tel" th:field="*{phone}" class="form-control phone-input"
+                                               placeholder="010-0000-0000">
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">이메일 <span class="text-danger">*</span></label>
+                                        <input type="email" th:field="*{email}" class="form-control"
+                                               th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'">
+                                        <div class="invalid-feedback" th:errors="*{email}"></div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">권한</label>
+                                        <select th:field="*{role}" class="form-select">
+                                            <option th:each="r : ${roles}" th:value="${r}"
+                                                    th:text="${r.name() == 'ADMIN'} ? '관리자' : '일반회원'"></option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">회원 등급</label>
+                                        <select th:field="*{businessGrade}" class="form-select">
+                                            <option th:each="g : ${grades}" th:value="${g}" th:text="${g.label}"></option>
+                                        </select>
+                                        <div class="form-text">
+                                            도매 <span th:text="${gradePolicy.wholesalePercent}">20</span>% ·
+                                            도도매 <span th:text="${gradePolicy.superWholesalePercent}">30</span>% 할인
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 d-flex align-items-end">
+                                        <div class="form-check form-switch mb-2 pb-2">
+                                            <input class="form-check-input" type="checkbox" th:field="*{enabled}" id="enabledSwitch"
+                                                   style="width:2.5rem;height:1.3rem;">
+                                            <label class="form-check-label ms-2 fw-semibold" for="enabledSwitch">계정 활성화</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <hr class="my-1">
+                                        <label class="form-label fw-semibold">
+                                            비밀번호 변경
+                                            <span class="text-muted fw-normal small ms-1">(비워두면 변경하지 않습니다)</span>
+                                        </label>
+                                        <input type="password" th:field="*{newPassword}" class="form-control"
+                                               placeholder="새 비밀번호 입력 시 변경됩니다.">
+                                    </div>
+
+                                    <div class="col-12 d-flex gap-2 pt-2">
+                                        <button type="submit" class="btn btn-primary px-4">
+                                            <i class="bi bi-save me-1"></i>저장
+                                        </button>
+                                        <a th:href="@{/admin/members}" class="btn btn-outline-secondary px-4">취소</a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+</body>
+</html>

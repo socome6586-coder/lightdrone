@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('결제 안내')}"></th:block>
+    <style>
+        .payment-fail-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 18px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, .08);
+        }
+        .payment-fail-icon {
+            width: 84px;
+            height: 84px;
+            margin: 0 auto;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .payment-fail-summary {
+            border: 1px solid #f1f5f9;
+            border-radius: 14px;
+            background: #fafcff;
+            padding: 16px 18px;
+            text-align: left;
+        }
+        .payment-fail-tip {
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: .92rem;
+        }
+        .payment-fail-actions .btn {
+            min-width: 150px;
+            border-radius: 12px;
+            font-weight: 700;
+            padding: 11px 18px;
+        }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<div class="page-header">
+    <div class="page-header-overlay"></div>
+    <div class="container text-center text-white position-relative">
+        <h1 class="display-5 fw-bold">결제 안내</h1>
+    </div>
+</div>
+
+<section class="section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-7 col-md-9">
+                <div class="card payment-fail-card border-0 text-center p-4 p-md-5">
+
+                    <div class="mb-4">
+                        <div class="payment-fail-icon">
+                            <i class="bi bi-exclamation-circle-fill text-danger" style="font-size:2.4rem;"></i>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="badge text-bg-danger-subtle text-danger-emphasis px-3 py-2 rounded-pill">결제가 완료되지 않았습니다</span>
+                    </div>
+
+                    <h4 class="fw-bold mb-2">다시 확인 후 안전하게 재시도해 주세요</h4>
+                    <p class="text-muted mb-4" style="line-height:1.7;">
+                        결제 진행 중 취소되었거나 승인 단계에서 문제가 발생했을 수 있습니다.<br>
+                        같은 주문으로 중복 결제되지는 않았는지 먼저 확인한 뒤 다시 진행해 주세요.
+                    </p>
+
+                    <div class="payment-fail-summary mb-3">
+                        <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+                            <span class="text-muted">안내 메시지</span>
+                            <strong class="text-end" th:text="${errorMessage} ?: '결제가 취소되었거나 정상 처리되지 않았습니다.'">결제가 취소되었습니다.</strong>
+                        </div>
+                        <div class="d-flex justify-content-between gap-3 py-2" th:if="${errorCode}">
+                            <span class="text-muted">오류 코드</span>
+                            <strong class="text-end" th:text="${errorCode}">ERROR_CODE</strong>
+                        </div>
+                    </div>
+
+                    <div class="payment-fail-tip alert alert-light border mb-2">
+                        <div class="fw-semibold mb-1">
+                            <i class="bi bi-info-circle me-1 text-primary"></i>이럴 때가 많습니다
+                        </div>
+                        <div class="small text-muted" style="line-height:1.7;">
+                            카드사 인증 창을 닫았거나, 인증 시간이 초과되었거나, 한도/보안 정책으로 승인이 보류된 경우입니다.
+                        </div>
+                    </div>
+
+                    <div class="payment-fail-tip alert alert-warning border-0 mb-4 text-start">
+                        <div class="fw-semibold mb-1">
+                            <i class="bi bi-shield-check me-1"></i>다시 결제하기 전에 확인해 주세요
+                        </div>
+                        <ul class="mb-0 ps-3 small" style="line-height:1.8;">
+                            <li>마이페이지 주문내역 또는 관리자 확인 후 중복 결제가 없는지 먼저 확인</li>
+                            <li>브라우저 새로고침 후 다시 시도하거나 다른 결제수단 선택</li>
+                            <li>계속 실패하면 고객센터로 문의</li>
+                        </ul>
+                    </div>
+
+                    <div class="payment-fail-actions d-flex gap-3 justify-content-center flex-wrap">
+                        <a href="javascript:history.back()" class="btn btn-primary">
+                            <i class="bi bi-arrow-clockwise me-1"></i>주문서로 돌아가기
+                        </a>
+                        <a th:href="@{/products}" class="btn btn-outline-secondary">
+                            <i class="bi bi-shop me-1"></i>상품 다시 보기
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

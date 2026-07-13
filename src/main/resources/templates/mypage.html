@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('마이페이지')}"></th:block>
+    <style>
+        .mypage-main {
+            padding: 80px 0 64px;
+        }
+        .mypage-content {
+            display: flex;
+            flex-direction: column;
+            gap: 26px;
+        }
+        .mypage-summary {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            border-bottom: 1px solid #dfe4ea;
+        }
+        .mypage-summary-item {
+            padding: 18px 18px 16px;
+            border-right: 1px solid #edf0f4;
+            text-decoration: none;
+            color: inherit;
+            min-width: 0;
+        }
+        .mypage-summary-item:last-child { border-right: 0; }
+        .mypage-summary-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: #7a8393;
+            font-size: .8rem;
+            margin-bottom: 8px;
+        }
+        .mypage-summary-value {
+            color: #15171a;
+            font-size: 1.45rem;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+        .mypage-summary-link {
+            margin-top: 8px;
+            color: #0d6efd;
+            font-size: .78rem;
+        }
+        .mypage-section {
+            border-top: 1px solid #e4e8ee;
+        }
+        .mypage-section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 15px 0;
+            border-bottom: 1px solid #dfe4ea;
+        }
+        .mypage-section-title {
+            margin: 0;
+            color: #15171a;
+            font-size: 1.05rem;
+            font-weight: 800;
+            letter-spacing: -.03em;
+        }
+        .mypage-link-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #0d6efd;
+            background: #fff;
+            color: #0d6efd;
+            padding: 5px 11px;
+            font-size: .83rem;
+            font-weight: 600;
+            text-decoration: none;
+            line-height: 1.35;
+            border-radius: 0;
+            min-height: 30px;
+        }
+        .mypage-link-btn:hover {
+            color: #fff;
+            background: #0d6efd;
+            text-decoration: none;
+        }
+        .mypage-link-btn.is-danger {
+            color: #dc2626;
+            border-color: #dc2626;
+        }
+        .mypage-link-btn.is-danger:hover {
+            color: #fff;
+            background: #dc2626;
+        }
+        .mypage-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            column-gap: 34px;
+            row-gap: 0;
+        }
+        .mypage-info-row {
+            display: grid;
+            grid-template-columns: 92px minmax(0, 1fr);
+            gap: 14px;
+            padding: 13px 0;
+            border-bottom: 1px solid #edf0f4;
+            min-width: 0;
+        }
+        .mypage-info-row.is-wide {
+            grid-column: 1 / -1;
+        }
+        .mypage-info-label {
+            color: #8a93a3;
+            font-size: .8rem;
+        }
+        .mypage-info-value {
+            color: #25282d;
+            font-size: .9rem;
+            font-weight: 500;
+            min-width: 0;
+            word-break: break-word;
+        }
+        .mypage-muted {
+            color: #9aa3af;
+        }
+        .mypage-status {
+            font-weight: 700;
+            font-size: .82rem;
+        }
+        .mypage-status.done { color: #15803d; }
+        .mypage-status.wait { color: #d97706; }
+        .mypage-grade {
+            color: #0d6efd;
+            font-weight: 700;
+        }
+        .mypage-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .9rem;
+        }
+        .mypage-table th {
+            padding: 12px 8px;
+            border-bottom: 1px solid #dfe4ea;
+            color: #7a8393;
+            font-size: .78rem;
+            font-weight: 700;
+            text-align: left;
+        }
+        .mypage-table td {
+            padding: 13px 8px;
+            border-bottom: 1px solid #edf0f4;
+            color: #333;
+            vertical-align: middle;
+        }
+        .mypage-table a {
+            color: #25282d;
+            text-decoration: none;
+        }
+        .mypage-table a:hover { color: #0d6efd; }
+        .mypage-empty {
+            padding: 32px 0;
+            color: #9aa3af;
+            text-align: center;
+            border-bottom: 1px solid #edf0f4;
+            font-size: .9rem;
+        }
+        .mypage-danger-zone {
+            text-align: right;
+            margin-top: -10px;
+        }
+        @media (max-width: 767.98px) {
+            .mypage-main { padding: 34px 0 56px; }
+            #mainNav .menu-link-all { display: none !important; }
+            #sidebarShowBtn {
+                top: 96px !important;
+                left: 10px !important;
+                min-width: 74px;
+                height: 36px;
+                padding: 0 12px;
+                border-radius: 0 !important;
+            }
+            .mypage-summary { grid-template-columns: 1fr; }
+            .mypage-summary-item {
+                border-right: 0;
+                border-bottom: 1px solid #edf0f4;
+                padding: 12px 0;
+            }
+            .mypage-summary-item:last-child { border-bottom: 0; }
+            .mypage-info-grid { grid-template-columns: 1fr; }
+            .mypage-info-row { grid-template-columns: 82px minmax(0, 1fr); }
+            .mypage-section-title { font-size: .96rem; }
+            .mypage-info-label { font-size: .76rem; }
+            .mypage-info-value,
+            .mypage-empty,
+            .mypage-table { font-size: .84rem; }
+            .mypage-table th:nth-child(2),
+            .mypage-table td:nth-child(2) { display: none; }
+        }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<section class="mypage-main">
+    <div class="container">
+        <div class="row g-4">
+            <th:block th:replace="~{layout/fragments :: mypageSidebar('dashboard')}"></th:block>
+
+            <div class="col-md-9 mypage-content">
+                <div th:if="${successMsg}" class="alert alert-success py-2 small mb-0">
+                    <span th:text="${successMsg}"></span>
+                </div>
+
+                <div class="mypage-summary">
+                    <a th:href="@{/as}" class="mypage-summary-item">
+                        <div class="mypage-summary-label"><i class="bi bi-headset"></i>서비스 센터</div>
+                        <div class="mypage-summary-value">A/S</div>
+                        <div class="mypage-summary-link">안내 보기</div>
+                    </a>
+                </div>
+
+                <section class="mypage-section">
+                    <div class="mypage-section-head">
+                        <h2 class="mypage-section-title">회원 정보</h2>
+                        <a th:href="@{/mypage/verify}" class="mypage-link-btn">정보수정</a>
+                    </div>
+
+                    <div class="mypage-info-grid">
+                        <div class="mypage-info-row">
+                            <div class="mypage-info-label">아이디</div>
+                            <div class="mypage-info-value" th:text="${member.username}">-</div>
+                        </div>
+
+                        <div class="mypage-info-row">
+                            <div class="mypage-info-label">이름</div>
+                            <div class="mypage-info-value" th:text="${member.name}">-</div>
+                        </div>
+
+                        <div class="mypage-info-row">
+                            <div class="mypage-info-label">이메일</div>
+                            <div class="mypage-info-value" th:text="${member.email}">-</div>
+                        </div>
+
+                        <div class="mypage-info-row">
+                            <div class="mypage-info-label">연락처</div>
+                            <div class="mypage-info-value"
+                                 th:with="rawPhone=${member.phone != null ? #strings.replace(member.phone, '-', '') : ''}"
+                                 th:text="${!#strings.isEmpty(rawPhone) ?
+                                     (#strings.length(rawPhone) == 11 ?
+                                         #strings.substring(rawPhone,0,3) + '-' + #strings.substring(rawPhone,3,7) + '-' + #strings.substring(rawPhone,7,11)
+                                         : member.phone)
+                                     : '미등록'}">-</div>
+                        </div>
+
+                        <div class="mypage-info-row is-wide">
+                            <div class="mypage-info-label">배송지</div>
+                            <div class="mypage-info-value"
+                                 th:if="${member.address != null and !#strings.isEmpty(member.address)}"
+                                 th:text="${'(' + member.zipCode + ') ' + member.address + (member.addressDetail != null and !#strings.isEmpty(member.addressDetail) ? ' ' + member.addressDetail : '')}">-</div>
+                            <div class="mypage-info-value mypage-muted"
+                                 th:unless="${member.address != null and !#strings.isEmpty(member.address)}">
+                                미등록<a th:href="@{/mypage/verify}" class="mypage-link-btn ms-2">등록하기</a>
+                            </div>
+                        </div>
+
+                        <div class="mypage-info-row">
+                            <div class="mypage-info-label">가입일</div>
+                            <div class="mypage-info-value"
+                                 th:text="${#temporals.format(member.createdAt, 'yyyy.MM.dd')}">-</div>
+                        </div>
+
+                        <div class="mypage-info-row" th:if="${member.businessGrade != null and member.businessGrade.business}"
+                             th:with="gradePct=${@pricingService.discountPercentFor(member)}">
+                            <div class="mypage-info-label">회원 등급</div>
+                            <div class="mypage-info-value">
+                                <span class="mypage-grade" th:text="${member.businessGrade.label}">도매</span>
+                                <span class="mypage-muted" th:if="${gradePct > 0}" th:text="| · 상시 ${gradePct}% 할인|"> · 상시 할인</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="mypage-danger-zone">
+                    <button type="button" class="mypage-link-btn is-danger"
+                            data-bs-toggle="modal" data-bs-target="#withdrawModal">
+                        회원탈퇴
+                    </button>
+                </div>
+
+                <section class="mypage-section">
+                    <div class="mypage-section-head">
+                        <h2 class="mypage-section-title">최근 문의 내역</h2>
+                        <a th:href="@{/inquiry/my}" class="mypage-link-btn">전체보기</a>
+                    </div>
+
+                    <div th:if="${recentInquiries.totalElements == 0}" class="mypage-empty">
+                        문의 내역이 없습니다.
+                    </div>
+
+                    <table th:if="${recentInquiries.totalElements > 0}" class="mypage-table">
+                        <thead>
+                        <tr>
+                            <th>제목</th>
+                            <th style="width:120px;">작성일</th>
+                            <th class="text-center" style="width:90px;">상태</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="inq : ${recentInquiries.content}">
+                            <td>
+                                <a th:href="@{/inquiry/{id}/view(id=${inq.id})}"
+                                   th:text="${inq.subject}">문의 제목</a>
+                            </td>
+                            <td class="mypage-muted" th:text="${#temporals.format(inq.createdAt, 'yyyy.MM.dd')}">날짜</td>
+                            <td class="text-center">
+                                <span th:if="${inq.answered}" class="mypage-status done">답변완료</span>
+                                <span th:unless="${inq.answered}" class="mypage-status wait">답변대기</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </section>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="withdrawModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">회원 탈퇴</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/mypage/withdraw}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">
+                        탈퇴 후 개인정보는 삭제되며 복구할 수 없습니다. 주문 내역은 법령에 따라 일정 기간 보관됩니다.
+                    </p>
+                    <div th:if="${withdrawErrorMsg}" class="alert alert-warning small mb-3">
+                        <span th:text="${withdrawErrorMsg}"></span>
+                    </div>
+                    <label class="form-label small text-muted">비밀번호 확인</label>
+                    <input type="password" name="withdrawPassword" class="form-control"
+                           th:classappend="${withdrawErrorMsg != null} ? 'is-invalid'"
+                           placeholder="현재 비밀번호를 입력하세요" required autocomplete="current-password">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-danger"
+                            onclick="return confirm('정말로 탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')">
+                        탈퇴하기
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.body.classList.add('has-mypage-sidebar');
+
+        if (window.matchMedia('(max-width: 767.98px)').matches) {
+            const sidebar = document.getElementById('mypageSidebarCol');
+            if (!sidebar) return;
+
+            document.body.classList.add('mypage-sidebar-initialized');
+            document.body.classList.remove('mypage-sidebar-open');
+
+            let backdrop = document.getElementById('mypageSidebarBackdrop');
+            if (!backdrop) {
+                backdrop = document.createElement('button');
+                backdrop.type = 'button';
+                backdrop.id = 'mypageSidebarBackdrop';
+                backdrop.className = 'mypage-sidebar-backdrop';
+                backdrop.setAttribute('aria-label', '사이드 메뉴 닫기');
+                document.body.appendChild(backdrop);
+            }
+
+            let showBtn = document.getElementById('sidebarShowBtn');
+            if (!showBtn) {
+                showBtn = document.createElement('button');
+                showBtn.type = 'button';
+                showBtn.id = 'sidebarShowBtn';
+                showBtn.className = 'sidebar-show-btn';
+                showBtn.title = '사이드바 펼치기';
+                showBtn.innerHTML = '<i class="bi bi-list"></i><span>메뉴</span>';
+                document.body.appendChild(showBtn);
+            }
+
+            showBtn.style.display = 'inline-flex';
+            showBtn.setAttribute('aria-expanded', 'false');
+
+            const closeSidebar = function () {
+                document.body.classList.remove('mypage-sidebar-open');
+                showBtn.style.display = 'inline-flex';
+                showBtn.setAttribute('aria-expanded', 'false');
+            };
+
+            const openSidebar = function () {
+                document.body.classList.add('mypage-sidebar-open');
+                showBtn.style.display = 'none';
+                showBtn.setAttribute('aria-expanded', 'true');
+            };
+
+            showBtn.onclick = openSidebar;
+            backdrop.onclick = closeSidebar;
+
+            const collapseBtn = sidebar.querySelector('.sidebar-collapse-btn');
+            if (collapseBtn) collapseBtn.onclick = closeSidebar;
+
+            sidebar.querySelectorAll('a').forEach(function (link) {
+                link.addEventListener('click', closeSidebar);
+            });
+        }
+    });
+</script>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

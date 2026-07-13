@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('문의 상세')}"></th:block>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<div class="page-header">
+    <div class="page-header-overlay"></div>
+    <div class="container text-center text-white position-relative">
+        <h1 class="display-5 fw-bold">문의 상세</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center">
+                <li class="breadcrumb-item"><a th:href="@{/}" class="text-white-50">홈</a></li>
+                <li th:if="${member != null}" class="breadcrumb-item">
+                    <a th:href="@{/inquiry/my}" class="text-white-50">내 문의</a>
+                </li>
+                <li th:if="${member == null}" class="breadcrumb-item">
+                    <a th:href="@{/inquiry}" class="text-white-50">문의하기</a>
+                </li>
+                <li class="breadcrumb-item active text-white">상세</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section-padding">
+    <div class="container">
+        <div class="row g-4">
+
+            <!-- 사이드바 (로그인 사용자에게만 표시) -->
+            <th:block th:if="${member != null}">
+                <th:block th:replace="~{layout/fragments :: mypageSidebar('inquiry')}"></th:block>
+            </th:block>
+
+            <!-- 문의 상세 내용 -->
+            <div th:class="${member != null} ? 'col-md-9' : 'col-lg-10 mx-auto'">
+
+                <!-- 문의 내용 -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                        <h5 class="mb-0 fw-bold" th:text="${inquiry.subject}">제목</h5>
+                        <span class="badge"
+                              th:classappend="${inquiry.answered} ? 'bg-success' : 'bg-warning text-dark'"
+                              th:text="${inquiry.answered} ? '답변완료' : '답변대기'"></span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-2 text-muted small mb-3">
+                            <div class="col-sm-6">
+                                <i class="bi bi-person me-1"></i>
+                                <span th:text="${inquiry.name}"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <i class="bi bi-envelope me-1"></i>
+                                <span th:text="${inquiry.email}"></span>
+                            </div>
+                            <div class="col-sm-6" th:if="${inquiry.phone}">
+                                <i class="bi bi-telephone me-1"></i>
+                                <span th:text="${inquiry.phone}"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <i class="bi bi-calendar me-1"></i>
+                                <span th:text="${#temporals.format(inquiry.createdAt, 'yyyy년 MM월 dd일 HH:mm')}"></span>
+                            </div>
+                        </div>
+                        <hr>
+                        <p class="mt-3 lh-lg" th:text="${inquiry.content}"></p>
+                    </div>
+                </div>
+
+                <!-- 답변 -->
+                <div class="card border-0 shadow-sm" th:if="${inquiry.answered}">
+                    <div class="card-header bg-primary text-white py-3">
+                        <i class="bi bi-reply-fill me-2"></i>답변
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="lh-lg mb-0" th:utext="${inquiry.answer}"></div>
+                    </div>
+                </div>
+
+                <!-- 미답변 안내 -->
+                <div class="alert alert-info mt-4" th:unless="${inquiry.answered}">
+                    <i class="bi bi-info-circle me-2"></i>
+                    문의가 접수되었습니다. 빠른 시일 내에 답변 드리겠습니다.
+                    <br><small class="text-muted">평일 09:00 ~ 18:00 운영 / 주말·공휴일 제외</small>
+                </div>
+
+                <div class="mt-4 d-flex gap-2 flex-wrap">
+                    <a th:if="${member != null}" th:href="@{/inquiry/my}" class="btn btn-outline-secondary">
+                        <i class="bi bi-list me-1"></i>문의 목록
+                    </a>
+                    <a th:if="${member == null}" th:href="@{/inquiry}" class="btn btn-outline-secondary">
+                        <i class="bi bi-pencil-square me-1"></i>새 문의 작성
+                    </a>
+                    <a th:if="${member == null}" th:href="@{/inquiry/lookup}" class="btn btn-outline-primary">
+                        <i class="bi bi-search me-1"></i>문의 조회
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

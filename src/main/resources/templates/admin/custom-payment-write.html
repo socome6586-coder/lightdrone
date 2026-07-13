@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('맞춤결제 등록')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+    <style>
+        /* 등록/취소 버튼 - 중앙 정렬 + 네모 + 컴팩트 */
+        .cp-submit-btn, .cp-cancel-btn {
+            border-radius: 8px;
+            padding: 7px 30px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* 실시간 미리보기 카드 */
+        .cp-preview-badge {
+            background: rgba(37, 99, 235, 0.12);
+            color: #2563eb;
+            font-weight: 700;
+            font-size: 0.75rem;
+            padding: 3px 10px;
+            border-radius: 6px;
+        }
+        .cp-preview {
+            display: flex;
+            gap: 22px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .cp-preview-img {
+            width: 160px;
+            height: 160px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f1f5f9;
+            flex-shrink: 0;
+        }
+        .cp-preview-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .cp-preview-body {
+            flex: 1 1 260px;
+            min-width: 240px;
+        }
+        .cp-preview-name {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+        .cp-preview-rows {
+            margin-bottom: 16px;
+        }
+        .cp-prow {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eef2f7;
+            font-size: 0.9rem;
+        }
+        .cp-plabel { color: #64748b; }
+        .cp-pvalue { font-weight: 600; }
+        .cp-pprice { color: var(--admin-primary); font-weight: 800; }
+    </style>
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('custom-payments')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('맞춤결제 등록', '개별 결제 요청용 상품과 결제 정보를 관리자 콘솔에서 등록합니다.')}"></th:block>
+
+        <div class="container" style="max-width:680px;">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" th:action="@{/admin/custom-payments}"
+                          th:object="${customPaymentDto}" enctype="multipart/form-data" class="row g-3">
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">상품명</label>
+                            <input type="text" th:field="*{name}" class="form-control"
+                                   placeholder="예: 고객명 또는 라이트드론">
+                            <div class="form-text">구매자 식별용 이름 또는 기업명을 입력합니다.</div>
+                            <div class="text-danger small" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">맞춤결제 코드</label>
+                            <input type="text" th:field="*{code}" class="form-control" maxlength="4"
+                                   inputmode="numeric" placeholder="예: 1234">
+                            <div class="form-text">구매자 전화번호 앞자리 4자리</div>
+                            <div class="text-danger small" th:if="${#fields.hasErrors('code')}" th:errors="*{code}"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">가격</label>
+                            <input type="text" th:field="*{price}" id="price" class="form-control" inputmode="numeric"
+                                   placeholder="예: 150,000">
+                            <div class="text-danger small" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">배송 방법</label>
+                            <select th:field="*{deliveryMethod}" id="deliveryMethod" class="form-select">
+                                <option value="택배">택배</option>
+                                <option value="직접수령">직접수령</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">대표 이미지 <span class="text-muted fw-normal small">(선택)</span></label>
+                            <input type="file" name="imageFile" id="imageFile" accept="image/*" class="form-control">
+                            <div class="form-text">등록하지 않으면 기본 이미지가 적용됩니다.</div>
+                        </div>
+
+                        <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+                            <button type="submit" class="btn btn-primary cp-submit-btn">
+                                <i class="bi bi-check-lg me-1"></i>등록
+                            </button>
+                            <a th:href="@{/admin/custom-payments}" class="btn btn-outline-secondary cp-cancel-btn">취소</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 실시간 미리보기 (구매자 화면 미러) -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="cp-preview-badge">미리보기</span>
+                        <span class="text-muted small">구매자에게 이렇게 표시됩니다.</span>
+                    </div>
+                    <div class="cp-preview">
+                        <div class="cp-preview-img">
+                            <img id="pvImg" src="/images/payment.png" alt="미리보기">
+                        </div>
+                        <div class="cp-preview-body">
+                            <h3 class="cp-preview-name"><span id="pvName">상품명</span> 님</h3>
+                            <div class="cp-preview-rows">
+                                <div class="cp-prow">
+                                    <span class="cp-plabel">맞춤결제코드</span>
+                                    <span class="cp-pvalue" id="pvCode">0000</span>
+                                </div>
+                                <div class="cp-prow">
+                                    <span class="cp-plabel">배송방법</span>
+                                    <span class="cp-pvalue" id="pvDelivery">택배</span>
+                                </div>
+                                <div class="cp-prow">
+                                    <span class="cp-plabel">가격</span>
+                                    <span class="cp-pvalue cp-pprice" id="pvPrice">0원</span>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary w-100" style="border-radius:8px;" disabled>
+                                <i class="bi bi-credit-card me-2"></i>카드결제하기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+<script>
+    (function () {
+        var byId = function (id) { return document.getElementById(id); };
+        var nameEl = byId('name'), codeEl = byId('code'), priceEl = byId('price'),
+            deliEl = byId('deliveryMethod'), fileEl = byId('imageFile');
+        var pvImg = byId('pvImg'), pvName = byId('pvName'), pvCode = byId('pvCode'),
+            pvDelivery = byId('pvDelivery'), pvPrice = byId('pvPrice');
+        var DEFAULT_IMG = '/images/payment.png';
+
+        function digits(v) {
+            return (v || '').replace(/[^\d]/g, '');
+        }
+
+        function fmtPrice(v) {
+            var d = digits(v);
+            if (!d) return '0원';
+            return parseInt(d, 10).toLocaleString('ko-KR') + '원';
+        }
+
+        // 가격 입력 시 자동으로 천 단위 콤마
+        function formatPriceField() {
+            var d = digits(priceEl.value);
+            priceEl.value = d ? parseInt(d, 10).toLocaleString('ko-KR') : '';
+        }
+
+        function render() {
+            var nm = (nameEl.value || '').trim();
+            pvName.textContent = nm ? nm : '상품명';
+            pvCode.textContent = (codeEl.value || '').trim() || '0000';
+            pvDelivery.textContent = deliEl.value || '택배';
+            pvPrice.textContent = fmtPrice(priceEl.value);
+        }
+
+        if (priceEl) {
+            priceEl.addEventListener('input', function () {
+                formatPriceField();
+                render();
+            });
+            // 제출 직전 콤마 제거 → 서버에는 순수 숫자 전송
+            var form = priceEl.closest('form');
+            if (form) form.addEventListener('submit', function () {
+                priceEl.value = digits(priceEl.value);
+            });
+            formatPriceField();
+        }
+
+        [nameEl, codeEl].forEach(function (el) {
+            if (el) el.addEventListener('input', render);
+        });
+        if (deliEl) deliEl.addEventListener('change', render);
+        if (fileEl) fileEl.addEventListener('change', function () {
+            var file = this.files && this.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function (e) { pvImg.src = e.target.result; };
+                reader.readAsDataURL(file);
+            } else {
+                pvImg.src = DEFAULT_IMG;
+            }
+        });
+
+        render();
+    })();
+</script>
+</body>
+</html>

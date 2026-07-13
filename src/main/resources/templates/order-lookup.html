@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('비회원 주문 조회')}"></th:block>
+    <style>
+        .info-row { display:flex;justify-content:space-between;padding:.55rem 0;border-bottom:1px solid #f0f0f0; }
+        .info-row:last-child { border-bottom:none; }
+        .status-badge { font-size:.85rem;padding:.35em .75em;border-radius:20px; }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<div class="page-header">
+    <div class="page-header-overlay"></div>
+    <div class="container text-center text-white position-relative">
+        <h1 class="display-5 fw-bold">비회원 주문 조회</h1>
+        <p class="lead mt-2 mb-0">주문번호와 연락처로 주문 내역을 확인하세요</p>
+    </div>
+</div>
+
+<section class="section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-md-8">
+
+                <!-- 조회 폼 -->
+                <div class="card border-0 shadow-sm p-4 mb-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-search me-2 text-primary"></i>주문 조회</h5>
+
+                    <div th:if="${errorMsg}" class="alert alert-danger py-2 small mb-3">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <span th:text="${errorMsg}"></span>
+                    </div>
+
+                    <form th:action="@{/order/lookup}" method="post">
+                        <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">주문번호</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-receipt"></i></span>
+                                <input type="text" name="orderNumber" class="form-control"
+                                       placeholder="예) ORD-20250601-000001"
+                                       th:value="${searchOrderNumber}"
+                                       required>
+                            </div>
+                            <div class="form-text text-muted small">주문 완료 후 SMS 또는 이메일로 받으신 주문번호를 입력하세요.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">주문 시 입력한 연락처</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-phone"></i></span>
+                                <input type="tel" name="buyerPhone" class="form-control"
+                                       placeholder="예) 010-1234-5678"
+                                       th:value="${searchBuyerPhone}"
+                                       required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search me-2"></i>주문 조회하기
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 맞춤결제 조회 -->
+                <div class="card border-0 shadow-sm p-4 mb-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-credit-card-2-front me-2 text-primary"></i>맞춤결제 조회</h5>
+                    <form th:action="@{/order/lookup-custom}" method="post">
+                        <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <div class="input-group mb-2">
+                            <span class="input-group-text bg-light"><i class="bi bi-hash"></i></span>
+                            <input type="text" name="code" class="form-control" maxlength="4" inputmode="numeric"
+                                   placeholder="맞춤결제코드 4자리" th:value="${searchedCode}" required>
+                            <button type="submit" class="btn btn-outline-primary">조회</button>
+                        </div>
+                        <div class="form-text text-muted small">안내받으신 맞춤결제코드(전화번호 끝 4자리)를 입력하세요.</div>
+                    </form>
+
+                    <!-- 맞춤결제 결과 -->
+                    <div th:if="${customSearched}" class="mt-3">
+                        <div th:if="${customResults == null or #lists.isEmpty(customResults)}" class="alert alert-warning py-2 small mb-0">
+                            <i class="bi bi-exclamation-circle me-1"></i>해당 코드로 등록된 맞춤결제가 없습니다.
+                        </div>
+                        <div th:each="cp : ${customResults}" class="d-flex align-items-center gap-3 border-top pt-3 mt-3">
+                            <img th:src="${cp.imageUrlOrDefault}" alt=""
+                                 style="width:52px;height:52px;object-fit:cover;border-radius:6px;flex-shrink:0;">
+                            <div class="flex-grow-1">
+                                <div class="fw-bold small" th:text="${cp.name + ' 님'}">구매자 님</div>
+                                <div class="text-muted" style="font-size:.78rem;">배송 <span th:text="${cp.deliveryMethod}">택배</span></div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold text-primary small" th:text="${#numbers.formatInteger(cp.price,0,'COMMA') + '원'}">0원</div>
+                                <span th:if="${cp.status.name() == 'PAID'}" class="badge bg-success">결제완료</span>
+                                <a th:unless="${cp.status.name() == 'PAID'}" th:href="@{/custom}" class="badge bg-warning text-dark text-decoration-none">미결제 · 결제하기</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 조회 결과 -->
+                <div th:if="${order}" class="card border-0 shadow-sm p-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-clipboard-check me-2 text-primary"></i>주문 내역</h5>
+
+                    <!-- 주문번호 & 상태 -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <div class="text-muted small">주문번호</div>
+                            <div class="fw-bold text-primary" th:text="${order.orderNumber}"></div>
+                        </div>
+                        <span th:with="s=${order.status.name()}"
+                              th:classappend="${s == 'PENDING_PAYMENT'} ? 'bg-warning text-dark' :
+                                             (${s == 'PAID'} ? 'bg-info text-dark' :
+                                             (${s == 'PREPARING'} ? 'bg-primary text-white' :
+                                             (${s == 'SHIPPING'} ? 'bg-success text-white' :
+                                             (${s == 'DELIVERED'} ? 'bg-success text-white' :
+                                             (${s == 'CANCELLED'} ? 'bg-secondary text-white' : 'bg-light text-dark')))))"
+                              class="badge status-badge"
+                              th:text="${order.status.label}">
+                        </span>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- 주문 상품 -->
+                    <div class="mb-3">
+                        <div class="fw-semibold small text-muted mb-2">주문 상품</div>
+                        <div th:each="item : ${order.items}" class="d-flex justify-content-between py-1">
+                            <span class="small" th:text="${item.productName}"></span>
+                            <span class="small text-muted"
+                                  th:text="${item.quantity + '개 / ' + #numbers.formatInteger(item.productPrice * item.quantity, 0, 'COMMA') + '원'}"></span>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- 금액 요약 -->
+                    <div class="info-row">
+                        <span class="text-muted small">상품금액</span>
+                        <span class="small" th:text="${#numbers.formatInteger(order.totalPrice - order.shippingFee, 0, 'COMMA') + '원'}"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="text-muted small">배송비</span>
+                        <span class="small" th:text="${order.shippingFee == 0 ? '무료' : #numbers.formatInteger(order.shippingFee, 0, 'COMMA') + '원'}"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="fw-bold">총 결제금액</span>
+                        <span class="fw-bold text-primary fs-5" th:text="${#numbers.formatInteger(order.totalPrice, 0, 'COMMA') + '원'}"></span>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- 배송지 -->
+                    <div class="mb-3">
+                        <div class="fw-semibold small text-muted mb-2">배송지 정보</div>
+                        <div class="info-row">
+                            <span class="text-muted small">수령인</span>
+                            <span class="small" th:text="${order.receiverName}"></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="text-muted small">연락처</span>
+                            <span class="small" th:text="${order.receiverPhone}"></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="text-muted small">주소</span>
+                            <span class="small text-end" style="max-width:60%"
+                                  th:text="${(order.zipCode != null ? '[' + order.zipCode + '] ' : '') + (order.address ?: '') + ' ' + (order.addressDetail ?: '')}"></span>
+                        </div>
+                    </div>
+
+                    <!-- 운송장 (배송 중인 경우) -->
+                    <div th:if="${order.trackingNumber != null}" class="alert alert-success py-2 small mb-0">
+                        <i class="bi bi-truck me-1"></i>
+                        <strong th:text="${order.courierCompany ?: '택배사'}"></strong>
+                        · 운송장: <strong th:text="${order.trackingNumber}"></strong>
+                    </div>
+
+                    <!-- 거절 사유 -->
+                    <div th:if="${order.rejectReason != null}" class="alert alert-warning py-2 small mb-0 mt-2">
+                        <i class="bi bi-info-circle me-1"></i>
+                        거절 사유: <span th:text="${order.rejectReason}"></span>
+                    </div>
+                </div>
+
+                <!-- 하단 안내 -->
+                <div class="text-center mt-4">
+                    <a th:href="@{/auth/login}" class="text-muted small text-decoration-none me-3">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>로그인
+                    </a>
+                    <a th:href="@{/products}" class="text-muted small text-decoration-none">
+                        <i class="bi bi-grid me-1"></i>쇼핑 계속하기
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

@@ -1,0 +1,1774 @@
+﻿<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('농업용 드론 전문 쇼핑몰')}"></th:block>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<!-- SEO용 H1 (화면에는 visually-hidden 으로 숨김, 검색엔진·스크린리더용) -->
+<h1 class="visually-hidden">라이트드론 농업용 드론 전문 판매몰</h1>
+
+<!-- 안내 토스트 (회원가입 완료 등) -->
+<div th:if="${successMsg}"
+     class="position-fixed top-0 start-50 translate-middle-x mt-4"
+     style="z-index:1090;min-width:320px;max-width:500px;width:90%;">
+    <div id="welcomeToast"
+         class="toast show align-items-center text-white border-0 shadow-lg"
+         style="background:linear-gradient(135deg,#0d6efd,#0a58ca);border-radius:12px;">
+        <div class="d-flex align-items-center px-3 py-3">
+            <i class="bi bi-person-check-fill fs-4 me-3 flex-shrink-0"></i>
+            <div class="flex-grow-1">
+                <div class="fw-bold" th:text="${successMsg}"></div>
+                <div class="small opacity-75 mt-1">회원가입이 완료되었습니다.</div>
+            </div>
+            <button type="button" class="btn-close btn-close-white ms-3 flex-shrink-0"
+                    onclick="document.getElementById('welcomeToast').remove()"></button>
+        </div>
+        <div class="progress" style="height:3px;border-radius:0 0 12px 12px;background:rgba(255,255,255,.2);">
+            <div id="welcomeProgress" class="progress-bar bg-white"
+                 style="width:100%;transition:width 4s linear;"></div>
+        </div>
+    </div>
+</div>
+<script th:if="${successMsg}">
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        const bar = document.getElementById('welcomeProgress');
+        if (bar) bar.style.width = '0%';
+    }));
+    setTimeout(() => {
+        const t = document.getElementById('welcomeToast');
+        if (t) { t.style.transition = 'opacity .4s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }
+    }, 4000);
+</script>
+
+<!-- 메인 패널 배너 슬라이더 (노출 설정된 패널만 표시) -->
+<div class="fb-wrap" th:if="${heroPanels != null and !#lists.isEmpty(heroPanels)}">
+    <div class="fb-track" id="fbTrack">
+
+        <!-- 노출(visible) 설정된 패널만 슬라이드로 렌더 -->
+        <div class="fb-slide" th:each="panel : ${heroPanels}">
+            <a th:href="${panel.linkUrl != null and !#strings.isEmpty(panel.linkUrl) ? panel.linkUrl : 'javascript:void(0)'}"
+               class="fb-link text-decoration-none">
+                <img th:src="${panel.imageUrl != null and !#strings.isEmpty(panel.imageUrl) ? panel.imageUrl : '/images/placeholder.svg'}"
+                     th:alt="${panel.label ?: 'LIGHT DRONE'}" class="fb-img">
+                <div class="fb-caption">
+                    <span class="fb-name" th:if="${panel.label != null and !#strings.isEmpty(panel.label)}"
+                          th:text="${panel.label}"></span>
+                    <span class="fb-desc" th:if="${panel.description != null and !#strings.isEmpty(panel.description)}"
+                          th:text="${panel.description}"></span>
+                    <span class="fb-cta">제품 보러가기 <i class="bi bi-chevron-right"></i></span>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- 이전/다음 화살표 -->
+    <button class="fb-arrow fb-prev" id="fbPrev" aria-label="이전">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    <button class="fb-arrow fb-next" id="fbNext" aria-label="다음">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+
+    <!-- 인디케이터 -->
+    <div class="fb-dots" id="fbDots">
+        <span th:each="panel, st : ${heroPanels}"
+              class="fb-dot" th:classappend="${st.index == 0} ? ' active'"
+              th:attr="data-idx=${st.index}"></span>
+    </div>
+</div>
+
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400&display=swap');
+/* === 메인 패널 배너 슬라이더 === */
+.fb-wrap {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    margin-top: 0;
+    margin-bottom: 14px;
+    background: #fff;
+    padding-bottom: 0; /* 인디케이터 공간 */
+}
+
+.fb-track {
+    display: flex;
+    gap: 0;
+    padding: 0;
+    transition: transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: transform;
+}
+
+/* 센터 슬라이더: 가운데 3장 + 좌우 절반 노출 (피크 효과) */
+.fb-slide {
+    flex: 0 0 100%;
+    flex-shrink: 0;
+    overflow: hidden;
+    aspect-ratio: 16 / 5;
+    background: #f1f3f6;
+    position: relative;
+    cursor: pointer;
+}
+
+.fb-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.fb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+
+/* 캡션 오버레이 */
+.fb-caption {
+    position: absolute;
+    top: 11%;
+    right: 12%;
+    left: auto;
+    bottom: auto;
+    max-width: 64%;
+    padding: 0;
+    background: none;
+    color: #fff;
+    font-family: 'Pretendard', 'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.fb-badge {
+    display: none; /* 하드코딩 'LIGHT DRONE' 뱃지 비표시 */
+}
+
+.fb-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 2.85rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.22), 0 6px 18px rgba(0,0,0,0.14);
+    line-height: 1.08;
+}
+
+.fb-desc {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1.16rem;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+    opacity: 1;
+    line-height: 1.6;
+    margin-top: 14px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.22), 0 6px 14px rgba(0,0,0,0.14);
+    white-space: pre-line;   /* 관리자 설명의 줄바꿈(엔터)을 그대로 반영 */
+}
+
+/* 제품 보러가기 CTA — 박스 없이 글자만 */
+.fb-cta {
+    align-self: flex-end;
+    margin-top: 22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: #fff;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 0.98rem;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.12);
+}
+.fb-cta i { font-size: 0.9rem; transition: transform 0.3s ease; }
+.fb-slide:hover .fb-cta i { transform: translateX(5px); }
+
+/* 캡션 등장 애니메이션: 이미지가 먼저 보이고, 텍스트가 아래에서 위로 살짝 올라와 고정 */
+.fb-caption .fb-name,
+.fb-caption .fb-desc,
+.fb-caption .fb-cta {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.95s cubic-bezier(0.22, 0.61, 0.36, 1),
+                transform 0.95s cubic-bezier(0.22, 0.61, 0.36, 1);
+    will-change: transform, opacity;
+}
+.fb-caption.fb-in .fb-name { opacity: 1;    transform: translateY(0); transition-delay: 0.12s; }
+.fb-caption.fb-in .fb-desc { opacity: 1;    transform: translateY(0); transition-delay: 0.34s; }
+.fb-caption.fb-in .fb-cta  { opacity: 1;    transform: translateY(0); transition-delay: 0.56s; }
+
+/* 화살표 */
+.fb-arrow {
+    position: absolute;
+    top: 50%; /* 인디케이터 공간 감안 */
+    transform: translateY(-50%);
+    z-index: 20;
+    background: none;
+    border: none;
+    color: #fff;
+    width: 46px; height: 46px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.6rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.88;
+    padding: 0;
+    -webkit-text-stroke: 1.1px #fff;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.55), 0 0 2px rgba(0,0,0,0.35);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.fb-arrow:hover {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.16);
+}
+.fb-prev { left: 22px; }
+.fb-next { right: 94px; }   /* 우측 퀵메뉴 사이드바(우측 중앙) 피해서 안쪽으로 */
+
+/* 인디케이터 */
+.fb-dots {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    z-index: 20;
+}
+/* 빈 동그라미(미선택) → 꽉 찬 흰 점(선택) */
+.fb-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1.3px solid rgba(255,255,255,0.85);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+    cursor: pointer;
+    transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+    flex-shrink: 0;
+}
+.fb-dot:hover { border-color: #fff; }
+.fb-dot.active {
+    background: #fff;
+    border-color: #fff;
+    transform: scale(1.18);
+}
+
+/* 반응형: 태블릿 2장 */
+@media (max-width: 991px) {
+    .fb-wrap { margin-top: 0; }
+    .fb-slide { aspect-ratio: 16 / 7; }
+    .fb-name  { font-size: 2.1rem; }
+    .fb-desc  { font-size: 1.05rem; }
+    .fb-caption { top: 9%; right: 9%; max-width: 72%; padding: 0; }
+    .fb-cta { margin-top: 16px; font-size: 0.95rem; }
+}
+/* 반응형: 모바일 1장 */
+@media (max-width: 767px) {
+    .fb-wrap  { margin-top: 0; margin-bottom: 24px; }
+    .fb-track { padding: 0; gap: 0; }
+    .fb-slide { aspect-ratio: 16 / 11; }
+    .fb-arrow { width: 36px; height: 36px; font-size: 1.9rem; -webkit-text-stroke-width: 0.8px; }
+    .fb-prev  { left: 10px; }
+    .fb-next  { right: 14px; }
+    .fb-name  { font-size: 1.5rem; }
+    .fb-desc  { font-size: 0.88rem; margin-top: 5px; }
+    .fb-caption { top: 7%; right: 6%; max-width: 82%; padding: 0; gap: 5px; }
+    .fb-cta { margin-top: 11px; font-size: 0.82rem; }
+    .fb-dots  { bottom: 10px; }
+}
+</style>
+
+<script>
+(function () {
+    var TRANSITION = 'transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    var REAL = 6;              /* 실제 슬라이드 수 */
+    var LEAD = 4;              /* 앞쪽 클론 수 (좌측 피크 + 진입 오버런 여백) */
+    var TAIL = 4;              /* 뒤쪽 클론 수 (우측 피크 + 후방 오버런 여백) */
+    var current = 0;           /* 논리 인덱스 0 ~ REAL-1 (순환 시 잠깐 -1/REAL) */
+    var animating = false;
+    var timer;
+    var track = document.getElementById('fbTrack');
+    if (!track) return;            /* 노출 패널이 없으면 히어로 미렌더 → 중단 */
+    var wrap  = track.parentElement;
+    var dots  = document.querySelectorAll('#fbDots .fb-dot');
+
+    /* === 센터 트랙 무한 루프용 클론 (양 끝에 생성) === */
+    var originals = Array.prototype.slice.call(track.querySelectorAll('.fb-slide'));
+    /* 실제 노출 슬라이드 수에 맞춰 동적 재계산 */
+    REAL = originals.length;
+    if (REAL <= 1) { LEAD = 0; TAIL = 0; }   /* 1장이면 루프/클론 불필요 */
+    else { LEAD = Math.min(LEAD, REAL); TAIL = Math.min(TAIL, REAL); }
+    /* 앞쪽: 마지막 LEAD개를 순서대로 prepend → [REAL-LEAD ... REAL-1] */
+    for (var i = 0; i < LEAD; i++) {
+        var lIdx = ((REAL - 1 - i) % REAL + REAL) % REAL;
+        var lClone = originals[lIdx].cloneNode(true);
+        lClone.setAttribute('aria-hidden', 'true');
+        lClone.classList.add('fb-clone');
+        track.insertBefore(lClone, track.firstChild);
+    }
+    /* 뒤쪽: 처음 TAIL개를 순서대로 append */
+    for (var j = 0; j < TAIL; j++) {
+        var tClone = originals[j % REAL].cloneNode(true);
+        tClone.setAttribute('aria-hidden', 'true');
+        tClone.classList.add('fb-clone');
+        track.appendChild(tClone);
+    }
+
+    /* 노출 슬라이드가 1장뿐이면 캐러셀(자동재생·화살표·인디케이터·루프) 비활성화하고 고정 표시 */
+    if (REAL <= 1) {
+        wrap.querySelectorAll('.fb-arrow').forEach(function (a) { a.style.display = 'none'; });
+        var dotsBox = document.getElementById('fbDots');
+        if (dotsBox) dotsBox.style.display = 'none';
+        apply(false);
+        setTimeout(animateActive, 220);   /* 단일 슬라이드도 텍스트 등장 애니메이션 적용 */
+        window.addEventListener('resize', function () { apply(false); });
+        return;
+    }
+
+    function getVisible() {
+        return 1; /* 와이드 히어로: 항상 한 화면에 1장 풀폭 */
+    }
+    function slideWidth() {
+        var s = track.querySelector('.fb-slide');
+        return s ? s.getBoundingClientRect().width : 0;
+    }
+    function gapPx() {
+        return parseFloat(window.getComputedStyle(track).columnGap) || 0;
+    }
+
+    /* 현재 위치 적용 — 중앙 열 노출 + 좌우 절반 피크 */
+    function apply(animate) {
+        var step = wrap.getBoundingClientRect().width;
+        /* 좌우 피크 폭 = (뷰포트 - 중앙 열 - 사이 간격) / 2 */
+        var peek = 0;
+        /* 가장 왼쪽 슬라이드(DOM pos = LEAD+current)의 좌측 끝을 peek 위치로 정렬 */
+        var x = peek - (LEAD + current) * step;
+        track.style.transition = animate ? TRANSITION : 'none';
+        track.style.transform  = 'translateX(' + x + 'px)';
+        if (!animate) void track.offsetWidth; /* 강제 리플로우 */
+        updateDots();
+    }
+
+    function updateDots() {
+        var real = ((current % REAL) + REAL) % REAL;
+        dots.forEach(function (d, i) { d.classList.toggle('active', i === real); });
+    }
+
+    /* 캡션(제목·설명·CTA) 등장 애니메이션 제어 */
+    function clearCaptions() {
+        track.querySelectorAll('.fb-caption').forEach(function (c) { c.classList.remove('fb-in'); });
+    }
+    function animateActive() {
+        var real = ((current % REAL) + REAL) % REAL;
+        clearCaptions();
+        var slide = originals[real];
+        var cap   = slide ? slide.querySelector('.fb-caption') : null;
+        if (cap) { void cap.offsetWidth; cap.classList.add('fb-in'); } /* 리플로우 후 재생 */
+    }
+
+    function next() { if (animating) return; animating = true; clearCaptions(); current++; apply(true); }
+    function prev() { if (animating) return; animating = true; clearCaptions(); current--; apply(true); }
+    function goTo(idx) {
+        if (animating) return;
+        if (idx === current) return;
+        animating = true; clearCaptions(); current = idx; apply(true);
+    }
+
+    /* 전환 종료 후 클론 영역이면 실제 위치로 순간 점프 (튀지 않는 루프) */
+    track.addEventListener('transitionend', function (e) {
+        if (e.target !== track) return;          /* 캡션 transition 버블링 무시 */
+        if (e.propertyName !== 'transform') return;
+        if (current >= REAL)      { current -= REAL; apply(false); }
+        else if (current < 0)     { current += REAL; apply(false); }
+        animating = false;
+        animateActive();                         /* 이동 완료 후 새 슬라이드 텍스트 등장 */
+    });
+
+    function autoPlay() { timer = setInterval(next, 7500); }
+    function resetTimer() { clearInterval(timer); autoPlay(); }
+
+    document.getElementById('fbPrev').addEventListener('click', function () { prev(); resetTimer(); });
+    document.getElementById('fbNext').addEventListener('click', function () { next(); resetTimer(); });
+
+    dots.forEach(function (dot) {
+        dot.addEventListener('click', function () { goTo(parseInt(this.dataset.idx)); resetTimer(); });
+    });
+
+    /* 터치 스와이프 */
+    var touchStartX = 0;
+    track.addEventListener('touchstart', function (e) {
+        touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    track.addEventListener('touchend', function (e) {
+        var dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 40) { (dx < 0 ? next() : prev()); resetTimer(); }
+    }, { passive: true });
+
+    /* 창 크기 변경 시 위치 재계산 */
+    var resizeTimer;
+    window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () { apply(false); }, 150);
+    });
+
+    apply(false);
+    setTimeout(animateActive, 220);   /* 첫 슬라이드 텍스트 등장 */
+    /* 이미지 로딩 완료 후 최종 레이아웃 폭으로 재정렬 (옆 패널 노출 방지) */
+    window.addEventListener('load', function () { apply(false); });
+    autoPlay();
+})();
+</script>
+
+<!-- 빠른 메뉴 바로가기 -->
+<style>
+.idx-showcase {
+    background: #F3F4F7;
+    min-height: calc(100vh - var(--header-h) - 8px);
+    padding: 18px 0 18px;
+    margin: 0 0 14px;
+    scroll-margin-top: 88px;
+    display: flex;
+    align-items: center;
+}
+.idx-showcase-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+.idx-quicknav { margin: 0; }
+.idx-quicknav-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 14px;
+}
+.idx-quick {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    min-height: 154px;
+    padding: 28px 14px;
+    border: none;
+    border-radius: 18px;
+    background: #f3f4f7;
+    text-decoration: none;
+    color: #2b3650;
+    transition: transform .32s cubic-bezier(.22,.61,.36,1),
+                box-shadow .32s ease,
+                background .32s ease,
+                color .32s ease;
+}
+.idx-quick:hover {
+    transform: translateY(-6px);
+    background: #e3f4f4;
+    box-shadow: 0 18px 36px -20px rgba(16,141,149,.32);
+    color: var(--primary, #1a4fd8);
+}
+.idx-quick-ic {
+    font-size: 2.8rem;
+    line-height: 1;
+    color: #38425c;
+    transition: color .32s ease, transform .32s ease;
+}
+.idx-quick:hover .idx-quick-ic {
+    color: #0B6E74;
+    transform: translateY(-3px);
+}
+.idx-quick-label {
+    font-family: 'Pretendard', system-ui, sans-serif;
+    font-size: 1.04rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: #38425c;
+}
+.idx-quick:hover .idx-quick-label {
+    color: #0B6E74;
+}
+@media (max-width: 991px) {
+    .idx-showcase {
+        min-height: auto;
+        padding: 18px 0 20px;
+        margin-bottom: 12px;
+    }
+    .idx-showcase-inner { gap: 12px; }
+    .idx-quicknav-grid { grid-template-columns: repeat(4, 1fr); gap: 13px; }
+    .idx-quick { min-height: 132px; padding: 24px 10px; gap: 14px; }
+    .idx-quick-ic { font-size: 2.4rem; }
+}
+@media (max-width: 575px) {
+    .idx-showcase {
+        min-height: auto;
+        padding: 14px 0 16px;
+        margin-bottom: 10px;
+    }
+    .idx-showcase-inner { gap: 12px; }
+    .idx-quicknav-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .idx-quick { min-height: 104px; padding: 18px 8px; gap: 10px; border-radius: 14px; }
+    .idx-quick-ic { font-size: 1.95rem; }
+    .idx-quick-label { font-size: 0.88rem; }
+}
+
+/* 메인 동영상 섹션 */
+.idx-video { margin: 0; }
+/* 두 번째 섹션 바로 아래 첫 카테고리 섹션 상단 여백 축소 */
+.idx-showcase + .home-products.section-padding { padding-top: 6px; }
+.idx-video-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 14px 40px rgba(15, 30, 70, 0.12);
+}
+.idx-video-frame iframe,
+.idx-video-frame video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+}
+@media (max-width: 575.98px) {
+    .idx-video { margin: 0; }
+    .idx-video-frame { border-radius: 12px; }
+}
+</style>
+<section class="idx-showcase" id="homeShowcase">
+    <div class="container idx-showcase-inner">
+        <section class="idx-quicknav">
+            <div class="idx-quicknav-grid">
+                <a class="idx-quick" th:href="@{/products}">
+                    <span class="idx-quick-ic"><i class="bi bi-grid-1x2"></i></span>
+                    <span class="idx-quick-label">제품전체보기</span>
+                </a>
+                <a class="idx-quick" th:href="@{/company}">
+                    <span class="idx-quick-ic"><i class="bi bi-building"></i></span>
+                    <span class="idx-quick-label">회사정보</span>
+                </a>
+                <a class="idx-quick" th:href="@{/inquiry}">
+                    <span class="idx-quick-ic"><i class="bi bi-clipboard-check"></i></span>
+                    <span class="idx-quick-label">견적문의</span>
+                </a>
+                <a class="idx-quick" th:href="@{/support}">
+                    <span class="idx-quick-ic"><i class="bi bi-folder2-open"></i></span>
+                    <span class="idx-quick-label">자료실</span>
+                </a>
+                <a class="idx-quick" th:href="@{/as}">
+                    <span class="idx-quick-ic"><i class="bi bi-wrench-adjustable"></i></span>
+                    <span class="idx-quick-label">A/S안내</span>
+                </a>
+                <a class="idx-quick" th:href="@{/review}">
+                    <span class="idx-quick-ic"><i class="bi bi-star"></i></span>
+                    <span class="idx-quick-label">구매후기</span>
+                </a>
+                <a class="idx-quick" th:href="@{/qna}">
+                    <span class="idx-quick-ic"><i class="bi bi-question-circle"></i></span>
+                    <span class="idx-quick-label">Q&amp;A</span>
+                </a>
+                <a class="idx-quick" th:href="@{/custom}">
+                    <span class="idx-quick-ic"><i class="bi bi-credit-card-2-front"></i></span>
+                    <span class="idx-quick-label">맞춤결제</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- 메인 동영상 (URL 설정 시 자동재생) -->
+        <section class="idx-video" th:if="${homeVideoEmbedUrl != null or homeVideoFileUrl != null}">
+            <div class="idx-video-frame">
+                <iframe th:if="${homeVideoEmbedUrl != null}"
+                        th:src="${homeVideoEmbedUrl}"
+                        th:title="${homeVideoTitle != null} ? ${homeVideoTitle} : '메인 동영상'"
+                        allow="autoplay; encrypted-media; picture-in-picture"
+                        allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                <video th:if="${homeVideoFileUrl != null}"
+                       th:src="${homeVideoFileUrl}"
+                       autoplay muted loop playsinline preload="metadata"></video>
+            </div>
+        </section>
+    </div>
+</section>
+
+<script>
+(function () {
+    var hero = document.querySelector('.fb-wrap');
+    var showcase = document.getElementById('homeShowcase');
+    var header = document.getElementById('siteHeader');
+    if (!hero || !showcase) return;
+    if (window.matchMedia('(max-width: 991px)').matches) return;
+
+    var locked = false;
+    var cooldown = false;
+    var animationFrameId = null;
+    var MAX_SNAP_DELTA = 120;
+
+    function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function smoothScrollTo(targetY, duration) {
+        var startY = window.scrollY || window.pageYOffset;
+        var distance = targetY - startY;
+        var startTime = performance.now();
+
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+
+        function frame(now) {
+            var elapsed = now - startTime;
+            var progress = Math.min(elapsed / duration, 1);
+            var eased = easeInOutCubic(progress);
+            window.scrollTo(0, startY + distance * eased);
+            if (progress < 1) {
+                animationFrameId = requestAnimationFrame(frame);
+            } else {
+                animationFrameId = null;
+            }
+        }
+
+        animationFrameId = requestAnimationFrame(frame);
+    }
+
+    function getHeaderHeight() {
+        return header ? header.offsetHeight : 0;
+    }
+
+    function getSnapSections() {
+        return [showcase];
+    }
+
+    function getSectionY(section) {
+        return Math.max(0, section.getBoundingClientRect().top + window.scrollY - getHeaderHeight());
+    }
+
+    function goToSection(section, duration) {
+        if (locked) return;
+        locked = true;
+        smoothScrollTo(getSectionY(section), duration || 560);
+        setTimeout(function () {
+            locked = false;
+            cooldown = true;
+            setTimeout(function () { cooldown = false; }, 420);
+        }, 580);
+    }
+
+    function getCurrentSectionIndex(sections) {
+        var currentY = window.scrollY + getHeaderHeight() + 24;
+        var bestIndex = 0;
+        var bestDiff = Infinity;
+
+        sections.forEach(function (section, index) {
+            var diff = Math.abs(getSectionY(section) - currentY);
+            if (diff < bestDiff) {
+                bestDiff = diff;
+                bestIndex = index;
+            }
+        });
+
+        return bestIndex;
+    }
+
+    window.addEventListener('wheel', function (e) {
+        if (cooldown || locked) return;
+        if (Math.abs(e.deltaY) <= 20) return;
+        if (Math.abs(e.deltaY) >= MAX_SNAP_DELTA) return;
+
+        var sections = getSnapSections();
+        if (!sections.length) return;
+
+        var heroGate = Math.min(hero.offsetHeight * 0.35, 180);
+        if (window.scrollY <= heroGate && e.deltaY > 0) {
+            e.preventDefault();
+            goToSection(showcase, 560);
+            return;
+        }
+
+        var currentIndex = getCurrentSectionIndex(sections);
+        var currentSection = sections[currentIndex];
+        var currentTop = getSectionY(currentSection);
+        var currentBottom = currentTop + currentSection.offsetHeight;
+        var viewTop = window.scrollY + getHeaderHeight();
+        var viewBottom = viewTop + window.innerHeight;
+
+        if (e.deltaY > 0) {
+            var nextSection = sections[currentIndex + 1];
+            if (!nextSection) return;
+
+            if (viewTop >= currentTop - 16 && viewTop < currentBottom - 80) {
+                e.preventDefault();
+                goToSection(nextSection, 560);
+            }
+            return;
+        }
+
+        var prevSection = sections[currentIndex - 1];
+        if (!prevSection) return;
+
+        if (viewBottom > currentTop + 80 && viewTop <= currentBottom) {
+            e.preventDefault();
+            goToSection(prevSection, 560);
+        }
+    }, { passive: false });
+})();
+</script>
+
+<!-- 제품 (카테고리별 노출) -->
+<section class="section-padding home-products">
+    <div class="container">
+
+        <!-- 카테고리별 제품 섹션 -->
+        <th:block th:each="cat : ${homeCategories}">
+            <div th:id="'cat-' + ${cat.name}" class="cat-products home-cat-section">
+                <div class="home-cat-layout"
+                     th:classappend="${!(cat.homeBannerVisible and cat.homeBannerImageUrl != null and !#strings.isEmpty(cat.homeBannerImageUrl))} ? ' is-products-only' : ''">
+                    <a class="home-cat-banner"
+                       th:if="${cat.homeBannerVisible and cat.homeBannerImageUrl != null and !#strings.isEmpty(cat.homeBannerImageUrl)}"
+                       th:classappend="${#strings.isEmpty(cat.homeBannerTitle) and #strings.isEmpty(cat.homeBannerSubtitle)} ? ' is-plain' : ''"
+                       th:href="${cat.homeBannerLinkUrl != null and !#strings.isEmpty(cat.homeBannerLinkUrl)} ? ${cat.homeBannerLinkUrl} : @{/products(category=${cat.name})}">
+                        <img th:src="@{${cat.homeBannerImageUrl}}" th:alt="${cat.name}" class="home-cat-banner-img" loading="lazy">
+                        <div class="home-cat-banner-copy"
+                             th:if="${!#strings.isEmpty(cat.homeBannerTitle) or !#strings.isEmpty(cat.homeBannerSubtitle)}">
+                            <h2 class="home-cat-banner-title"
+                                th:if="${!#strings.isEmpty(cat.homeBannerTitle)}"
+                                th:text="${cat.homeBannerTitle}">카테고리</h2>
+                            <p class="home-cat-banner-subtitle"
+                               th:if="${!#strings.isEmpty(cat.homeBannerSubtitle)}"
+                               th:text="${cat.homeBannerSubtitle}">카테고리 설명</p>
+                        </div>
+                    </a>
+                    <div class="home-cat-products-panel">
+                <div class="home-cat-section-head">
+                    <div class="home-cat-section-titlewrap">
+                        <h2 class="home-cat-section-title" th:text="${cat.name}">카테고리</h2>
+                        <span class="home-cat-section-desc"
+                              th:if="${!#strings.isEmpty(cat.homeSectionDescription)}"
+                              th:text="${cat.homeSectionDescription}">카테고리 설명</span>
+                    </div>
+                    <a th:href="@{/products(category=${cat.name})}" class="home-cat-more">
+                        전체보기 <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+                <div class="row g-3 row-cols-2 row-cols-md-3"
+                      th:classappend="${cat.homeBannerVisible and cat.homeBannerImageUrl != null and !#strings.isEmpty(cat.homeBannerImageUrl)} ? ' row-cols-xl-3' : ' row-cols-xl-4'">
+                    <th:block th:each="product, productStat : ${homeProductsByCategory[cat.name]}">
+                        <th:block th:if="${productStat.index < ((cat.homeBannerVisible and cat.homeBannerImageUrl != null and !#strings.isEmpty(cat.homeBannerImageUrl)) ? 6 : 8)}">
+                        <div class="col">
+                            <div class="card h-100 home-prod-card prod-ribbon-host">
+                                <!-- BEST / NEW / 할인 리본 (우측 상단) -->
+                                <div class="prod-ribbons">
+                                    <span th:unless="${product.stock > 0}" class="prod-ribbon rb-soldout">품절</span>
+                                    <span th:if="${product.newProduct}" class="prod-ribbon rb-new">NEW</span>
+                                    <span th:if="${product.best}" class="prod-ribbon rb-best">BEST</span>
+                                    <span th:if="${product.onSale}" class="prod-ribbon rb-sale"
+                                          th:text="${product.discountPercent} + '%'">10%</span>
+                                </div>
+                                <div th:if="${product.imageUrl != null and !#strings.isEmpty(product.imageUrl)}"
+                                     class="product-img-box">
+                                    <a th:href="@{/products/{id}(id=${product.id})}" class="prod-img-link">
+                                        <img th:src="@{${product.imageUrl}}" class="home-prod-img"
+                                             th:alt="${product.name}" loading="lazy" decoding="async">
+                                    </a>
+                                    <button th:if="${product.stock > 0}"
+                                            type="button" class="home-cart-fab home-btn-cart"
+                                            th:data-product-id="${product.id}"
+                                            th:data-csrf="${_csrf.token}"
+                                            th:data-csrf-header="${_csrf.headerName}"
+                                            title="장바구니 담기">
+                                        <i class="bi bi-cart-plus"></i>
+                                    </button>
+                                </div>
+                                <div th:unless="${product.imageUrl != null and !#strings.isEmpty(product.imageUrl)}"
+                                     class="sample-img-wrap">
+                                    <a th:href="@{/products/{id}(id=${product.id})}"
+                                       class="prod-img-link d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-box-seam text-secondary"></i>
+                                    </a>
+                                    <button th:if="${product.stock > 0}"
+                                            type="button" class="home-cart-fab home-btn-cart"
+                                            th:data-product-id="${product.id}"
+                                            th:data-csrf="${_csrf.token}"
+                                            th:data-csrf-header="${_csrf.headerName}"
+                                            title="장바구니 담기">
+                                        <i class="bi bi-cart-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="card-body p-3 d-flex flex-column">
+                                    <h6 class="home-prod-name mb-2">
+                                        <a th:href="@{/products/{id}(id=${product.id})}"
+                                           th:text="${product.name}"
+                                           class="text-decoration-none text-dark"></a>
+                                    </h6>
+                                    <div class="home-prod-price mb-2">
+                                        <span th:if="${product.priceOnRequest}">가격문의</span>
+                                        <th:block th:unless="${product.priceOnRequest}">
+                                            <span th:if="${product.onSale}">
+                                                <span class="hp-original"
+                                                      th:text="${#numbers.formatInteger(product.price,0,'COMMA') + '원'}"></span>
+                                                <span class="hp-sale-group">
+                                                    <span class="hp-current"
+                                                          th:text="${#numbers.formatInteger(product.effectivePrice,0,'COMMA') + '원'}"></span>
+                                                    <span class="hp-pct" th:text="${product.discountPercent} + '%'"></span>
+                                                </span>
+                                            </span>
+                                            <span th:unless="${product.onSale}"
+                                                  th:text="${#numbers.formatInteger(product.headlinePrice,0,'COMMA') + '원'}"></span>
+                                        </th:block>
+                                    </div>
+                                    <div class="mt-auto">
+                                        <div class="home-prod-meta" th:if="${product.productCode != null and !#strings.isEmpty(product.productCode)}">
+                                            <span class="hpm-label">코드</span>
+                                            <span class="hpm-value" th:text="${product.productCode}"></span>
+                                        </div>
+                                        <div class="home-prod-meta">
+                                            <span class="hpm-label">카테고리</span>
+                                            <span class="hpm-value"
+                                                  th:text="${product.subcategory != null and !#strings.isEmpty(product.subcategory) ? product.subcategory : product.category}"></span>
+                                        </div>
+                                        <div class="home-prod-meta">
+                                            <span class="hpm-label">구매후기</span>
+                                            <span class="hpm-value"
+                                                  th:text="${(reviewCounts != null and reviewCounts.containsKey(product.id) ? reviewCounts.get(product.id) : 0) + '건'}">0건</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        </th:block>
+                    </th:block>
+                </div>
+                <!-- 해당 카테고리 상품 없을 때 -->
+                    </div>
+                </div>
+                <div class="empty-cat-msg text-center text-muted py-4" style="display:none;">
+                    <i class="bi bi-box-seam d-block fs-3 mb-2 opacity-25"></i>등록된 상품이 없습니다.
+                </div>
+            </div>
+        </th:block>
+
+        <!-- 카테고리 자체가 없을 때 -->
+        <div th:if="${#lists.isEmpty(homeCategories)}" class="text-center text-muted py-5">
+            <i class="bi bi-tags d-block fs-2 mb-2 opacity-25"></i>
+            <p>등록된 카테고리가 없습니다.</p>
+        </div>
+
+        <!-- 전체보기 버튼 -->
+        <div class="text-center mt-4">
+            <a th:href="@{/products}" class="btn btn-outline-primary px-4">
+                <i class="bi bi-grid me-1"></i>상품 전체보기
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- 장바구니 토스트 -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999;">
+    <div id="homeCartToast" class="toast text-bg-success border-0" role="alert">
+        <div class="toast-body">
+            <div class="d-flex align-items-center mb-2">
+                <i class="bi bi-cart-check me-2 flex-shrink-0"></i>
+                <span id="homeCartToastMsg" class="fw-semibold flex-grow-1">장바구니에 담았습니다.</span>
+                <button type="button" class="btn-close btn-close-white ms-2 flex-shrink-0" data-bs-dismiss="toast"></button>
+            </div>
+            <a href="/cart" class="btn btn-sm btn-light w-100 fw-semibold text-success">
+                <i class="bi bi-cart3 me-1"></i>장바구니로 이동
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ── 홈 카테고리 내비 ── */
+.home-cat-nav-wrap { }
+.home-cat-nav {
+    display: flex; flex-wrap: wrap; gap: 0;
+    border-bottom: 2px solid #e9ecef;
+}
+.home-cat-item { position: relative; }
+.home-cat-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 11px 22px; font-size: .875rem; font-weight: 500;
+    color: #495057; background: transparent; border: none;
+    border-bottom: 3px solid transparent; cursor: pointer;
+    transition: color .15s, background .15s; white-space: nowrap;
+    margin-bottom: -2px; /* 하단 border 위에 겹치기 */
+}
+.home-cat-btn:hover { color: var(--bs-primary); background: #f5f7ff; }
+.home-cat-btn.active {
+    color: var(--bs-primary); border-bottom-color: var(--bs-primary); font-weight: 700;
+}
+.hc-chevron { font-size: .65rem; opacity: .6; transition: transform .2s; }
+.home-cat-btn.active .hc-chevron,
+.home-cat-item:hover .hc-chevron { transform: rotate(180deg); }
+
+/* === 홈 카테고리 드롭다운 === */
+.home-cat-dropdown {
+    display: none;
+    position: absolute; top: 100%; left: 0;
+    min-width: 180px; background: #fff;
+    border: 1px solid #dee2e6; border-top: 2px solid var(--bs-primary);
+    border-radius: 0 0 .5rem .5rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,.1);
+    z-index: 1050;
+    padding: 4px 0;
+}
+.hcd-link {
+    display: block; padding: 9px 18px; font-size: .825rem;
+    color: #495057; text-decoration: none;
+    transition: background .12s, color .12s;
+    border-left: 3px solid transparent;
+}
+.hcd-link:hover {
+    background: #f0f4ff; color: var(--bs-primary);
+    border-left-color: var(--bs-primary);
+}
+.hcd-all { font-weight: 600; }
+.hcd-divider { height: 1px; background: #f0f0f0; margin: 4px 0; }
+
+/* ── 제품 카드 (플랫 · 컴팩트 리디자인) ── */
+.home-prod-card {
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #eee;
+    box-shadow: none !important;
+    transition: border-color .2s ease;
+}
+.home-prod-card:hover {
+    transform: none;
+    border-color: #d0d0d0;
+}
+/* 이미지 영역 정사각 비율 + 사진이 박스를 꽉 채움 */
+.product-img-box {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: #f7f8fa;
+}
+.prod-img-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.home-prod-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+/* 이미지 하단 라벨 띠 (관리자가 '이미지에 이름 표시' 체크 시) */
+.prod-img-label {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    z-index: 2;
+    background: #1f9d88;
+    color: #fff;
+    font-size: .92rem;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    text-align: center;
+    padding: .5em .6em;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.sample-img-wrap {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #fafbfc 0%, #f1f3f6 100%);
+    font-size: 3rem;
+}
+
+/* 호버 시 떠오르는 장바구니 버튼 (FAB) */
+.home-cart-fab {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    width: 38px; height: 38px;
+    border: 1px solid #dbe4ff; border-radius: 0;
+    background: rgba(255,255,255,.96);
+    color: #0d6efd;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .95rem;
+    text-decoration: none;
+    cursor: pointer;
+    z-index: 3;
+    box-shadow: 0 8px 18px rgba(15,23,42,.12);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity .18s ease, transform .18s ease, background .15s ease, color .15s ease, border-color .15s ease;
+}
+.home-prod-card:hover .home-cart-fab {
+    opacity: 1;
+    transform: translateY(0);
+}
+.home-cart-fab:hover {
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+    transform: translateY(0);
+}
+/* 품절 표시 */
+.home-soldout-badge {
+    position: absolute;
+    right: 12px; bottom: 12px;
+    background: rgba(17,24,39,.72);
+    color: #fff;
+    font-size: .72rem; font-weight: 600;
+    padding: .32em .8em; border-radius: 20px;
+    z-index: 3;
+}
+/* 터치 기기: 호버 불가 → 항상 노출 */
+@media (hover: none) {
+    .home-cart-fab { opacity: 1; transform: none; }
+}
+/* 배지 */
+.home-cat-badge {
+    background: #eef2ff; color: #4f46e5;
+    font-weight: 600; font-size: .68rem;
+    padding: .32em .6em; border-radius: 6px;
+}
+.home-sub-badge {
+    background: #ecfeff; color: #0891b2;
+    font-weight: 600; font-size: .68rem;
+    padding: .32em .6em; border-radius: 6px;
+}
+/* 제품명 최대 2줄 클램프 */
+.home-prod-name {
+    font-size: .9rem; font-weight: 600; line-height: 1.4;
+    min-height: 2.5em;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+}
+.home-prod-name a:hover { color: var(--bs-primary) !important; }
+/* 가격 (할인가) */
+.home-prod-price {
+    font-size: 1.02rem; font-weight: 800; color: #1a4fd8;
+    letter-spacing: -.02em;
+}
+/* 카테고리별 섹션 헤더 (메인) — 줄 없는 깔끔한 스타일 */
+.home-cat-section { margin-bottom: 3rem; }
+.home-cat-section { scroll-margin-top: calc(var(--header-h) + 10px); }
+.home-cat-layout {
+    display: grid;
+    grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: stretch;
+}
+.home-cat-layout.is-products-only {
+    grid-template-columns: minmax(0, 1fr);
+}
+.home-cat-banner {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: 18px;
+    text-decoration: none;
+    background:
+        radial-gradient(circle at top right, rgba(255,255,255,.45), transparent 30%),
+        linear-gradient(160deg, #1a3f9f 0%, #5a7cf0 100%);
+    color: #fff;
+}
+.home-cat-banner-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.home-cat-banner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: transparent;
+}
+.home-cat-banner.is-plain::after {
+    background: transparent;
+}
+.home-cat-banner-copy {
+    position: relative;
+    z-index: 1;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 24px 22px;
+}
+.home-cat-banner-title {
+    font-size: 2rem;
+    font-weight: 900;
+    line-height: 1.12;
+    letter-spacing: -.04em;
+    margin: 0 0 10px;
+    color: #fff;
+    text-shadow: 0 2px 14px rgba(7, 19, 52, .24);
+}
+.home-cat-banner-subtitle {
+    font-size: .92rem;
+    line-height: 1.7;
+    color: rgba(255,255,255,.9);
+    margin: 0;
+    text-shadow: 0 2px 12px rgba(7, 19, 52, .2);
+}
+.home-cat-products-panel {
+    min-width: 0;
+}
+.home-cat-section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+}
+.home-cat-section-titlewrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+.home-cat-section-title {
+    font-family: 'Oswald', 'Pretendard', 'SUIT Variable', sans-serif;
+    font-size: 1.42rem;
+    font-weight: 400;
+    color: #263248;
+    margin: 0;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    display: inline-flex;
+    align-items: center;
+}
+.home-cat-section-desc {
+    font-family: 'Pretendard', 'SUIT Variable', sans-serif;
+    font-size: .9rem;
+    font-weight: 300;
+    color: #6f8792;
+    letter-spacing: -0.01em;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    line-height: 1.2;
+}
+.home-cat-section-desc::before {
+    content: ""; display: inline-block;
+    width: 38px;
+    height: 1px;
+    background: #c9d4db;
+    flex-shrink: 0;
+}
+@media (max-width: 575.98px) {
+    .home-cat-section-head { margin-bottom: 14px; }
+    .home-cat-section-titlewrap { gap: 10px; }
+    .home-cat-section-title { font-size: 1.2rem; }
+    .home-cat-section-desc { font-size: .8rem; gap: 8px; }
+    .home-cat-section-desc::before { width: 18px; }
+}
+.home-cat-more {
+    font-family: 'S-CoreDream', 'SUIT Variable', SUIT, sans-serif;
+    font-size: .85rem; color: #8a93a3; text-decoration: none; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;
+}
+.home-cat-more:hover { color: #1040bc; }
+/* 카드 메타 (코드 / 카테고리) */
+.home-prod-meta { display: flex; gap: 6px; font-size: .75rem; line-height: 1.55; }
+.home-prod-meta .hpm-label { color: #aaa; min-width: 44px; flex-shrink: 0; }
+.home-prod-meta .hpm-value { color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 할인 배지 + 정가 취소선 */
+.home-discount-badge {
+    background: #ff3b30; color: #fff;
+    font-size: .72rem; font-weight: 800;
+    padding: .12em .45em; border-radius: 5px;
+    letter-spacing: -.02em; line-height: 1.3;
+}
+.home-prod-oldprice {
+    font-size: .8rem; color: #9ca3af;
+    text-decoration: line-through;
+}
+/* 카드 본문 컴팩트 (가로 5칸 기준 사진·여백·텍스트 축소) */
+.home-prod-card .card-body { padding: .55rem .65rem; }
+.cat-products .row { --bs-gutter-x: .75rem; --bs-gutter-y: .75rem; }
+.home-prod-name { font-size: .82rem; min-height: 2.1em; margin-bottom: .25rem; line-height: 1.3; }
+.home-prod-price { font-size: .92rem; }
+.home-cat-badge, .home-sub-badge { font-size: .62rem; padding: .26em .5em; }
+.home-cart-fab { width: 34px; height: 34px; font-size: .9rem; right: 5px; bottom: 5px; }
+
+/* 웹: 홈 노출 상품 카드 세로 높이 축소 */
+@media (min-width: 992px) {
+    .home-prod-card .product-img-box,
+    .home-prod-card .sample-img-wrap {
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+    }
+    .home-prod-card .card-body {
+        padding: .48rem .58rem .58rem;
+    }
+    .home-prod-name {
+        font-size: .79rem;
+        line-height: 1.28;
+        min-height: 2.02em;
+        margin-bottom: .18rem;
+    }
+    .home-prod-meta {
+        font-size: .72rem;
+        line-height: 1.42;
+    }
+    .home-prod-price {
+        font-size: .88rem;
+    }
+}
+
+/* ── 모바일 전용 (≤767px) ── */
+@media (max-width: 767px) {
+    /* 섹션 여백 축소 */
+    .section-padding { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+    .section-header { margin-bottom: 1rem !important; }
+    .section-title { font-size: 1.25rem !important; }
+    .section-sub { display: none; }
+    .section-badge { font-size: 0.72rem; }
+
+    /* 카테고리 배너 가로 스크롤 */
+    .home-cat-nav-wrap { margin-bottom: 1rem; }
+    .home-cat-nav {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+    }
+    .home-cat-nav::-webkit-scrollbar { display: none; }
+    .home-cat-btn { padding: 9px 14px; font-size: 0.8rem; }
+    .home-cat-layout {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    /* 모바일에서는 카테고리 세로 배너 이미지 숨김 (상품 카드만 노출) */
+    .home-cat-banner {
+        display: none;
+    }
+
+    /* 드롭다운 비활성화 (모바일에선 호버 불가) */
+    .home-cat-dropdown { display: none !important; }
+
+    /* 상품 그리드 간격 축소 (4칸) */
+    .cat-products .row.g-3 {
+        --bs-gutter-x: 0.4rem;
+        --bs-gutter-y: 0.5rem;
+    }
+
+    /* ↓ 상품 카드 단순화 (4칸, 이미지+상품명·가격만 노출) */
+    .home-prod-card .card-body { padding: 0.4rem 0.45rem !important; }
+    .home-prod-card .d-flex.gap-1.flex-wrap { display: none !important; } /* 배지 숨김 */
+    .home-prod-meta { display: none !important; }                          /* 코드·카테고리·후기 숨김 */
+    .home-prod-name {
+        font-size: 0.72rem;
+        min-height: auto;
+        -webkit-line-clamp: 2;
+        margin-bottom: 0.2rem;
+    }
+    .home-prod-price { font-size: 0.78rem; }
+    /* 모바일 장바구니 버튼 */
+    .home-cart-fab { width: 28px; height: 28px; font-size: 0.72rem; right: 4px; bottom: 4px; box-shadow: 0 5px 12px rgba(15,23,42,.12); }
+}
+</style>
+
+<script>
+(function () {
+    document.addEventListener('DOMContentLoaded', function () {
+        /* ── 카테고리 탭 클릭 ── */
+        document.querySelectorAll('.home-cat-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.home-cat-btn').forEach(function (b) { b.classList.remove('active'); });
+                this.classList.add('active');
+                var cat = this.dataset.cat;
+                document.querySelectorAll('.cat-products').forEach(function (p) { p.classList.add('d-none'); });
+                var target = document.getElementById('cat-' + cat);
+                if (target) {
+                    target.classList.remove('d-none');
+                    /* 빈 섹션 체크 */
+                    var cards = target.querySelectorAll('.col-6');
+                    var emptyMsg = target.querySelector('.empty-cat-msg');
+                    if (emptyMsg) emptyMsg.style.display = cards.length === 0 ? 'block' : 'none';
+                }
+            });
+        });
+
+        /* 빈 카테고리 섹션 숨김 (상품 0개면 섹션 전체 숨김) */
+        document.querySelectorAll('.cat-products:not(.d-none)').forEach(function (sec) {
+            var cards = sec.querySelectorAll('.row.g-3 > .col');
+            if (cards.length === 0) sec.style.display = 'none';
+        });
+
+        /* ── 홈 상품 페이지네이션 (15개씩 = 5개 × 3줄) ── */
+        var PAGE_SIZE = 15;
+        function initPagination(sec) {
+            var cards = Array.from(sec.querySelectorAll('.row.g-3 > .col'));
+            if (cards.length <= PAGE_SIZE) return; // 15개 이하면 페이지네이션 불필요
+
+            var totalPages = Math.ceil(cards.length / PAGE_SIZE);
+            var currentPage = 0;
+
+            // 페이지네이션 컨테이너 추가
+            var nav = document.createElement('nav');
+            nav.className = 'home-prod-pagination mt-3 d-flex justify-content-center';
+            nav.innerHTML = '<ul class="pagination pagination-sm mb-0"></ul>';
+            var row = sec.querySelector('.row.g-3');
+            row.after(nav);
+
+            function renderPage(page) {
+                currentPage = page;
+                cards.forEach(function (c, i) {
+                    c.style.display = (i >= page * PAGE_SIZE && i < (page + 1) * PAGE_SIZE) ? '' : 'none';
+                });
+                // 페이지 버튼 재생성
+                var ul = nav.querySelector('ul');
+                ul.innerHTML = '';
+                // 이전
+                var li = document.createElement('li');
+                li.className = 'page-item' + (page === 0 ? ' disabled' : '');
+                li.innerHTML = '<a class="page-link" href="#">??/a>';
+                li.querySelector('a').addEventListener('click', function(e){ e.preventDefault(); if(page>0) renderPage(page-1); });
+                ul.appendChild(li);
+                // 번호
+                for (var i = 0; i < totalPages; i++) {
+                    (function(idx){
+                        var li2 = document.createElement('li');
+                        li2.className = 'page-item' + (idx === page ? ' active' : '');
+                        li2.innerHTML = '<a class="page-link" href="#">' + (idx+1) + '</a>';
+                        li2.querySelector('a').addEventListener('click', function(e){ e.preventDefault(); renderPage(idx); });
+                        ul.appendChild(li2);
+                    })(i);
+                }
+                // 다음
+                var li3 = document.createElement('li');
+                li3.className = 'page-item' + (page === totalPages-1 ? ' disabled' : '');
+                li3.innerHTML = '<a class="page-link" href="#">??/a>';
+                li3.querySelector('a').addEventListener('click', function(e){ e.preventDefault(); if(page<totalPages-1) renderPage(page+1); });
+                ul.appendChild(li3);
+            }
+            renderPage(0);
+        }
+        document.querySelectorAll('.cat-products:not(.d-none)').forEach(function(sec){ initPagination(sec); });
+
+        /* === 드롭다운 호버 (인라인 방식, 오버레이 아님) === */
+        document.querySelectorAll('.home-cat-item').forEach(function (item) {
+            var dropdown = item.querySelector('.home-cat-dropdown');
+            if (!dropdown) return;
+            var timer;
+            function show() { clearTimeout(timer); dropdown.style.display = 'block'; }
+            function hide() { timer = setTimeout(function () { dropdown.style.display = ''; }, 200); }
+            item.addEventListener('mouseenter', show);
+            item.addEventListener('mouseleave', hide);
+            dropdown.addEventListener('mouseenter', show);
+            dropdown.addEventListener('mouseleave', hide);
+        });
+
+        /* ── 홈 장바구니 담기 (AJAX) ── */
+        const homeToastEl = document.getElementById('homeCartToast');
+
+        function showHomeCartToast(msg, isError) {
+            document.getElementById('homeCartToastMsg').textContent = msg;
+            // !!isError로 명시적 boolean 변환 (undefined 전달 시 toggle 오동작 방지)
+            homeToastEl.classList.toggle('text-bg-success', !isError);
+            homeToastEl.classList.toggle('text-bg-danger', !!isError);
+            new bootstrap.Toast(homeToastEl, isError ? { delay: 3000 } : { autohide: false }).show();
+        }
+
+        document.querySelectorAll('.home-btn-cart').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                const productId   = this.dataset.productId;
+                const csrfToken   = this.dataset.csrf;
+                const csrfHeader  = this.dataset.csrfHeader;
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                try {
+                    const res = await fetch('/api/cart/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded', [csrfHeader]: csrfToken },
+                        body: 'productId=' + productId + '&quantity=1'
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.innerHTML = '<i class="bi bi-cart-check"></i>';
+                        this.classList.replace('btn-success', 'btn-secondary');
+                        /* 네비바 배지 갱신 */
+                        const badge = document.getElementById('cartBadge');
+                        if (badge && data.count !== undefined) badge.textContent = data.count;
+                        /* 플로팅 사이드바 장바구니 즉시 갱신 */
+                        if (typeof window.refreshCartSidebar === 'function') window.refreshCartSidebar();
+                        showHomeCartToast('장바구니에 담았습니다.');
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="bi bi-cart-plus"></i>';
+                            this.classList.replace('btn-secondary', 'btn-success');
+                            this.disabled = false;
+                        }, 1500);
+                    } else {
+                        showHomeCartToast(data.message || '담기에 실패했습니다.', true);
+                        this.innerHTML = '<i class="bi bi-cart-plus"></i>';
+                        this.disabled = false;
+                    }
+                } catch (e) {
+                    showHomeCartToast('오류가 발생했습니다.', true);
+                    this.innerHTML = '<i class="bi bi-cart-plus"></i>';
+                    this.disabled = false;
+                }
+            });
+        });
+    });
+})();
+</script>
+
+<!-- 하단 3단 바로가기 + 공지 + 문의 -->
+<div class="container">
+
+    <!-- 3단 바로가기 -->
+    <div class="idx-shortcut-row">
+        <a th:href="@{/products}" class="idx-shortcut">
+            <span class="idx-sc-label">Products</span>
+            <span class="idx-sc-title">제품 보기</span>
+            <span class="idx-sc-arrow">&rarr;</span>
+        </a>
+        <a th:href="@{/support}" class="idx-shortcut">
+            <span class="idx-sc-label">Manual</span>
+            <span class="idx-sc-title">자료실</span>
+            <span class="idx-sc-arrow">&rarr;</span>
+        </a>
+        <a th:href="@{/as}" class="idx-shortcut">
+            <span class="idx-sc-label">After Service</span>
+            <span class="idx-sc-title">A/S 안내</span>
+            <span class="idx-sc-arrow">&rarr;</span>
+        </a>
+    </div>
+
+    <!-- 공지사항 + 견적문의 -->
+    <div class="idx-bottom">
+
+        <!-- 공지사항 -->
+        <div>
+            <div class="idx-section-head">
+                <span class="idx-section-title">공지사항</span>
+                <a th:href="@{/notice}" class="idx-more-link">더보기</a>
+            </div>
+            <div class="idx-notice-list" th:if="${notices != null and !#lists.isEmpty(notices)}">
+                <div class="idx-notice-row" th:each="notice : ${notices}">
+                    <a th:href="@{/notice/{id}(id=${notice.id})}"
+                       th:text="${notice.title}"
+                       class="idx-notice-title"></a>
+                    <span class="idx-notice-date"
+                          th:text="${#temporals.format(notice.createdAt, 'yyyy.MM.dd')}"></span>
+                </div>
+            </div>
+            <p class="idx-notice-empty" th:if="${notices == null or #lists.isEmpty(notices)}">
+                등록된 공지사항이 없습니다.
+            </p>
+        </div>
+
+        <!-- 견적 및 문의 -->
+        <div>
+            <div class="idx-section-head">
+                <span class="idx-section-title">견적 및 문의</span>
+            </div>
+            <div class="idx-contact-body">
+                <!-- 전화번호 2개 -->
+                <div class="idx-phones">
+                    <div class="idx-phone-item">
+                        <div class="idx-phone-role">문의</div>
+                        <div class="idx-phone-num">010-3565-9741</div>
+                        <div class="idx-phone-name">이성희</div>
+                    </div>
+                    <div class="idx-phone-item">
+                        <div class="idx-phone-role">기술문의</div>
+                        <div class="idx-phone-num">010-2473-8303</div>
+                        <div class="idx-phone-name">원종인</div>
+                    </div>
+                </div>
+                <!-- 이메일 + 영업시간 -->
+                <div class="idx-contact-detail">
+                    <span>jjang8517@naver.com</span>
+                    <span class="idx-detail-sep">·</span>
+                    <span>평일 09:00 ~ 18:00</span>
+                </div>
+                <a th:href="@{/inquiry}" class="idx-contact-btn">온라인 견적 문의</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<!-- === 메인 팝업 (관리자 콘솔에서 등록) === -->
+<div th:if="${popups != null and !popups.isEmpty()}" id="mainPopupLayer" class="main-popup-layer">
+    <div class="main-popup-backdrop"></div>
+    <div class="main-popup-stack">
+        <div class="main-popup-card" th:each="popup : ${popups}"
+             th:attr="data-popup-id=${popup.id}"
+             th:style="'max-width:' + ${popup.width} + 'px;'">
+            <button type="button" class="main-popup-x" aria-label="팝업 닫기">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor"
+                     stroke-width="2.1" stroke-linecap="round">
+                    <path d="M6 6l12 12M18 6L6 18"></path>
+                </svg>
+            </button>
+            <div class="main-popup-body">
+                <a th:if="${popup.linkUrl != null and !#strings.isEmpty(popup.linkUrl)}"
+                   th:href="${popup.linkUrl}">
+                    <img th:src="${popup.imageUrl}" th:alt="${popup.title}" class="main-popup-img">
+                </a>
+                <img th:unless="${popup.linkUrl != null and !#strings.isEmpty(popup.linkUrl)}"
+                     th:src="${popup.imageUrl}" th:alt="${popup.title}" class="main-popup-img">
+            </div>
+            <div class="main-popup-foot">
+                <label class="main-popup-hide">
+                    <input type="checkbox" class="main-popup-hide-today">
+                    <span>오늘 하루 보지 않기</span>
+                </label>
+                <button type="button" class="main-popup-close">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .main-popup-layer {
+        position: fixed; inset: 0; z-index: 10050;
+    }
+    .main-popup-backdrop {
+        position: fixed; inset: 0;
+        background: radial-gradient(120% 120% at 30% 0%, rgba(30,40,80,.30), rgba(8,12,26,.50));
+        animation: popupFade .35s ease both;
+    }
+    .main-popup-stack {
+        position: relative; z-index: 1;
+        display: flex; flex-wrap: wrap; gap: 22px;
+        align-items: flex-start; justify-content: center;
+        max-width: 100%;
+    }
+    .main-popup-card {
+        position: relative; width: 100%;
+        background: #fff; border-radius: 0; overflow: hidden;
+        box-shadow: 0 24px 70px rgba(12, 20, 50, 0.42), 0 2px 0 rgba(255,255,255,.6) inset;
+        animation: popupRise .42s cubic-bezier(.2,.8,.25,1) both;
+    }
+    .main-popup-x {
+        position: absolute; top: 10px; right: 10px; z-index: 2;
+        width: auto; height: auto; border: 0; border-radius: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: transparent; color: #fff; cursor: pointer;
+        padding: 0; transition: opacity .15s ease;
+    }
+    .main-popup-x:hover { opacity: .78; }
+    .main-popup-body { line-height: 0; }
+    .main-popup-img { width: 100%; height: auto; display: block; }
+    .main-popup-foot {
+        display: flex; align-items: stretch; justify-content: stretch;
+        gap: 0; padding: 0;
+        background: #1b2031; border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .main-popup-hide {
+        display: flex; align-items: center; justify-content: center; gap: 0;
+        flex: 1 1 50%; min-height: 38px; margin: 0; padding: 6px 10px;
+        color: #c8cedc; font-size: 0.84rem; font-weight: 300;
+        font-family: 'Pretendard', 'SUIT Variable', 'Noto Sans KR', sans-serif;
+        letter-spacing: -0.01em;
+        cursor: pointer; user-select: none;
+        border-right: 1px solid rgba(255,255,255,.12);
+    }
+    .main-popup-hide input { position: absolute; opacity: 0; pointer-events: none; }
+    .main-popup-hide:has(input:checked) { color: #fff; }
+    .main-popup-close {
+        flex: 1 1 50%; min-height: 38px;
+        background: transparent; border: 0;
+        color: #fff; font-weight: 300;
+        font-family: 'Pretendard', 'SUIT Variable', 'Noto Sans KR', sans-serif;
+        letter-spacing: -0.01em;
+        font-size: 0.86rem; cursor: pointer; padding: 6px 10px; border-radius: 0;
+        transition: background .18s ease;
+    }
+    .main-popup-hide:hover,
+    .main-popup-close:hover { background: rgba(255,255,255,.08); }
+    @keyframes popupFade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes popupRise {
+        from { opacity: 0; transform: translateY(24px) scale(.96); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @media (max-width: 575px) {
+        .main-popup-layer { padding: 0; }
+        .main-popup-stack { width: 100%; }
+        .main-popup-card {
+            max-width: 100vw !important;
+            width: 100vw !important;
+            border-radius: 0;
+        }
+        .main-popup-img {
+            max-height: 62vh;
+            object-fit: cover;
+        }
+        /* 모바일에서는 하단 버튼(하루 보지않기/닫기) 제거 — 이미지 + 우상단 X만 노출 */
+        .main-popup-foot { display: none !important; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .main-popup-backdrop, .main-popup-card { animation: none; }
+    }
+</style>
+<script>
+(function () {
+    var layer = document.getElementById('mainPopupLayer');
+    if (!layer) return;
+    var today = new Date().toISOString().slice(0, 10);
+
+    function closeLayerIfEmpty() {
+        if (!layer.querySelector('.main-popup-card')) {
+            layer.remove();
+            document.body.style.overflow = '';
+            // 스크롤바 복구로 뷰포트 폭이 바뀌므로 배너 슬라이더 위치 재계산 유도
+            window.dispatchEvent(new Event('resize'));
+        }
+    }
+
+    // 각 팝업을 화면 왼쪽 상단부터 고정(fixed) 슬롯에 배치한다.
+    // fixed 라 형제 카드의 flow에 영향을 안 주므로, 하나를 닫아도 나머지는
+    // 자기 자리를 그대로 지킨다(위치 안 바뀜). 화면 폭을 넘기면 다음 줄로.
+    function layoutPopups() {
+        var cards = layer.querySelectorAll('.main-popup-card');
+        if (!cards.length) return;
+        var vw = window.innerWidth, vh = window.innerHeight;
+        var isMobile = vw <= 767;
+        var topBase = Math.round(vh * 0.06);
+
+        if (isMobile) {
+            var target = vw;
+            var left = 0;
+            var bottomGap = 0;
+            var targetHeight = Math.round(vh * 0.72);
+            cards.forEach(function (c, i) {
+                c.style.position = 'fixed';
+                c.style.margin = '0';
+                c.style.maxWidth = target + 'px';
+                c.style.width = target + 'px';
+                c.style.maxHeight = targetHeight + 'px';
+                c.style.overflowY = 'auto';
+                c.style.left = left + 'px';
+                c.style.top = 'auto';
+                c.style.bottom = bottomGap + 'px';
+                c.style.zIndex = String(100 - i);          // 앞 카드가 위로
+                // 맨 앞(i===0)만 노출, 나머지는 뒤에서 대기
+                c.style.visibility = (i === 0) ? 'visible' : 'hidden';
+                c.style.pointerEvents = (i === 0) ? 'auto' : 'none';
+            });
+            return;
+        }
+
+        // 데스크탑: 왼쪽 상단부터 가로 배치(넘치면 다음 줄), 관리자 지정 폭의 1.2배
+        var leftBase = Math.max(16, Math.round(vw * 0.035));
+        var gap = 22;
+        var x = leftBase, y = topBase, rowH = 0;
+        cards.forEach(function (c) {
+            var mwRaw = getComputedStyle(c).maxWidth;
+            var base = (mwRaw && mwRaw !== 'none') ? parseFloat(mwRaw) : c.offsetWidth;
+            var target = Math.round(base * 1.2);
+            var cap = Math.min(560, vw - 32);
+            if (target > cap) target = cap;
+            c.style.position = 'fixed';
+            c.style.margin = '0';
+            c.style.zIndex = '2';
+            c.style.maxHeight = (vh - topBase - 16) + 'px';
+            c.style.overflowY = 'auto';
+            c.style.maxWidth = target + 'px';
+            c.style.width = target + 'px';
+            var w = c.offsetWidth;
+            if (x !== leftBase && x + w > vw - 16) { x = leftBase; y += rowH + gap; rowH = 0; }
+            c.style.left = x + 'px';
+            c.style.top = y + 'px';
+            rowH = Math.max(rowH, c.offsetHeight);
+            x += w + gap;
+        });
+    }
+
+    layer.querySelectorAll('.main-popup-card').forEach(function (card) {
+        var id = card.getAttribute('data-popup-id');
+        var key = 'popupHide_' + id;
+        try {
+            if (localStorage.getItem(key) === today) {
+                card.remove();
+                return;
+            }
+        } catch (e) { /* localStorage 비활성 시 무시 */ }
+
+        function dismiss(hideToday) {
+            try {
+                if (hideToday) {
+                    localStorage.setItem(key, today);
+                }
+            } catch (e) { /* 무시 */ }
+            card.style.transition = 'opacity .2s ease, transform .2s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(12px) scale(.97)';
+            setTimeout(function () {
+                card.remove();
+                // 모바일 덱: 닫은 뒤 다음 카드를 같은 자리에 다시 노출
+                if (window.innerWidth <= 767) layoutPopups();
+                closeLayerIfEmpty();
+            }, 180);
+        }
+        var hideToday = card.querySelector('.main-popup-hide-today');
+        // 닫기/X: 체크 상태에 따라 오늘 하루 숨김 처리
+        card.querySelector('.main-popup-close').addEventListener('click', function () { dismiss(hideToday.checked); });
+        card.querySelector('.main-popup-x').addEventListener('click', function () { dismiss(hideToday.checked); });
+        // "오늘 하루 보지 않기" 체크하면 즉시 닫고 처리
+        hideToday.addEventListener('change', function () {
+            if (hideToday.checked) dismiss(true);
+        });
+    });
+
+    // 백드롭 클릭 시 전체 닫기 (오늘 하루 보지 않기 상태는 유지)
+    // 남은 카드들을 왼쪽 상단 고정 슬롯에 배치 (닫아도 서로 안 밀림)
+    layoutPopups();
+    var resizeT;
+    window.addEventListener('resize', function () {
+        clearTimeout(resizeT);
+        resizeT = setTimeout(layoutPopups, 150);
+    });
+
+    var backdrop = layer.querySelector('.main-popup-backdrop');
+    if (backdrop) backdrop.addEventListener('click', function () {
+        layer.remove();
+        document.body.style.overflow = '';
+        window.dispatchEvent(new Event('resize'));
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.body.contains(layer)) {
+            layer.remove();
+            document.body.style.overflow = '';
+            window.dispatchEvent(new Event('resize'));
+        }
+    });
+
+    if (layer.querySelector('.main-popup-card')) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        layer.remove();
+    }
+})();
+</script>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

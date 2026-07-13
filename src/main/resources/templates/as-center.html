@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('A/S 안내')}"></th:block>
+    <style>
+        /* ── A/S 페이지 보조 스타일 ── */
+        .content-page-banner { margin-bottom: 22px; }
+        .content-page-banner img { display: block; border-radius: 6px; }
+
+        /* 버튼 전부 네모 */
+        .content-page .btn { border-radius: 0; font-weight: 600; }
+        .content-page .btn-sm { padding: 6px 14px; }
+
+        /* 카드 평평하게 (그림자 제거 · 컴팩트) */
+        .content-page .content-card {
+            box-shadow: none !important;
+            border: 1px solid #e9ebef;
+            border-radius: 4px;
+        }
+        .content-page .content-card .card-body { padding: 20px 22px !important; }
+        .content-page .content-section-title { font-size: 1.02rem; margin-bottom: 2px; }
+
+        /* 연락처 바 */
+        .as-contact-bar {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            padding: 18px 0 24px;
+            border-bottom: 1px solid #f0f2f5;
+            flex-wrap: wrap;
+        }
+
+        .as-contact-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.83rem;
+            color: #555;
+        }
+
+        .as-contact-item i { font-size: 0.85rem; color: #1a4fd8; }
+        .as-contact-item strong { color: #111; font-weight: 600; }
+
+        /* 프로세스 타임라인 */
+        .as-process {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+        }
+
+        @media (max-width: 767px) {
+            .as-process { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        .as-process-step {
+            padding: 0 24px 0 0;
+            border-right: 1px solid #f0f2f5;
+        }
+
+        .as-process-step:first-child { padding-left: 0; }
+        .as-process-step:last-child { border-right: none; }
+
+        @media (max-width: 767px) {
+            .as-process-step { padding: 0 6px !important; border-right: 1px solid #f0f2f5; }
+            .as-process-step:first-child { padding-left: 0 !important; }
+            .as-process-step:last-child { border-right: none; padding-right: 0 !important; }
+            .as-step-num { font-size: 0.66rem; margin-bottom: 6px; padding-bottom: 4px; }
+            .as-step-name { font-size: 0.72rem; margin-bottom: 3px; line-height: 1.25; word-break: keep-all; }
+            .as-step-desc { font-size: 0.6rem; line-height: 1.35; }
+            .as-step-desc br { display: none; }
+        }
+
+        .as-step-num {
+            display: inline-block;
+            width: auto;
+            height: auto;
+            background: transparent;
+            border-radius: 0;
+            margin: 0 0 11px;
+            color: #1a4fd8;
+            font-family: 'S-CoreDream', 'SUIT Variable', SUIT, sans-serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            line-height: 1;
+            padding-bottom: 7px;
+            border-bottom: 2px solid #1a4fd8;
+        }
+
+        .as-step-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 6px;
+        }
+
+        .as-step-desc {
+            font-size: 0.8rem;
+            color: #888;
+            line-height: 1.6;
+        }
+
+        /* 보증 2단 */
+        .as-warranty {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 639px) {
+            .as-warranty { grid-template-columns: 1fr; }
+        }
+
+        .as-warranty-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #eceef1;
+        }
+
+        .as-warranty-title { position: relative; padding-left: 11px; }
+        .as-warranty-head.free .as-warranty-title::before,
+        .as-warranty-head.paid .as-warranty-title::before {
+            content: ''; position: absolute; left: 0; top: 3px; bottom: 3px; width: 3px;
+        }
+        .as-warranty-head.free .as-warranty-title::before { background: #16a34a; }
+        .as-warranty-head.paid .as-warranty-title::before { background: #dc2626; }
+
+        .as-warranty-badge {
+            font-size: 0.62rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .as-warranty-badge.free { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+        .as-warranty-badge.paid { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+        .as-warranty-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #111;
+            margin: 0;
+        }
+
+        .as-warranty-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .as-warranty-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 9px 0;
+            border-bottom: 1px solid #f0f2f5;
+            font-size: 0.84rem;
+            color: #333;
+            line-height: 1.55;
+        }
+
+        .as-warranty-list li:last-child { border-bottom: none; }
+        .as-warranty-list li i { flex-shrink: 0; margin-top: 2px; font-size: 0.85rem; }
+        .as-warranty-list.free li i { color: #16a34a; }
+        .as-warranty-list.paid li i { color: #dc2626; }
+
+        /* 서비스 센터 3단 */
+        .as-center-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 767px) {
+            .as-center-grid { grid-template-columns: 1fr; }
+        }
+
+        .as-center-block-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #222;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .as-center-block-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #eceef1;
+        }
+
+        .as-center-info-row { display: flex; flex-direction: column; gap: 8px; }
+
+        .as-center-addr { font-size: 0.82rem; color: #555; line-height: 1.65; }
+
+        .as-center-phone {
+            font-size: 0.87rem;
+            font-weight: 600;
+            color: #111;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .as-center-phone i { font-size: 0.8rem; color: #1a4fd8; }
+        .as-center-phone-sub { font-size: 0.74rem; color: #888; font-weight: 400; }
+        .as-center-hours { font-size: 0.77rem; color: #888; }
+
+        .as-center-tag {
+            display: inline-block;
+            font-size: 0.67rem;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            background: #fef2f2;
+            padding: 2px 7px;
+            border-radius: 3px;
+        }
+
+        .as-link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.78rem;
+            color: #1a4fd8;
+            text-decoration: none;
+            border-bottom: 1px solid #c5d4f5;
+            padding-bottom: 1px;
+            transition: color 0.15s, border-color 0.15s;
+        }
+
+        .as-link-btn:hover { color: #1040bc; border-color: #1040bc; }
+
+        /* 하단 CTA (플랫·네모) */
+        .as-bottom-cta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            flex-wrap: wrap;
+            padding: 18px 22px;
+            background: #fafbfc;
+            border: 1px solid #e6e8ec;
+            border-radius: 0;
+            margin-top: 28px;
+            margin-bottom: 8px;
+        }
+
+        .as-bottom-cta-text h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #111;
+            letter-spacing: -0.02em;
+            margin: 0 0 2px;
+        }
+
+        .as-bottom-cta-text p { font-size: 0.8rem; color: #777; margin: 0; }
+
+        .as-bottom-cta-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<section class="content-page">
+    <div class="container">
+
+        <!-- A/S 안내 상단 배너 -->
+        <div class="content-page-banner">
+            <img th:src="@{/images/AS.png}" alt="A/S 안내" class="img-fluid w-100">
+        </div>
+
+
+        <!-- PROCESS -->
+        <div class="content-card mb-3">
+            <div class="card-body p-4">
+                <h4 class="content-section-title"><i class="bi bi-arrow-repeat"></i>신청 절차</h4>
+                <div class="as-process mt-3">
+                    <div class="as-process-step">
+                        <div class="as-step-num">01</div>
+                        <div class="as-step-name">문의 접수</div>
+                        <div class="as-step-desc">온라인 또는 전화로<br>A/S 접수</div>
+                    </div>
+                    <div class="as-process-step" style="padding-left:24px;">
+                        <div class="as-step-num">02</div>
+                        <div class="as-step-name">제품 수거</div>
+                        <div class="as-step-desc">택배 또는 방문을 통해<br>제품 수거</div>
+                    </div>
+                    <div class="as-process-step" style="padding-left:24px;">
+                        <div class="as-step-num">03</div>
+                        <div class="as-step-name">점검 및 수리</div>
+                        <div class="as-step-desc">전문 기술자가<br>정밀 점검 후 수리</div>
+                    </div>
+                    <div class="as-process-step" style="padding-left:24px;">
+                        <div class="as-step-num">04</div>
+                        <div class="as-step-name">제품 반환</div>
+                        <div class="as-step-desc">수리 완료 후<br>택배로 반환</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 연락처 바 (신청 절차 아래) -->
+        <div class="as-contact-bar mb-4">
+            <div class="as-contact-item">
+                <i class="bi bi-telephone"></i>
+                <span>직통 <strong>010-3565-9741</strong> (이성희)</span>
+            </div>
+            <div class="as-contact-item">
+                <i class="bi bi-tools"></i>
+                <span>기술 <strong>010-2473-8303</strong> (원종인)</span>
+            </div>
+            <div class="as-contact-item">
+                <i class="bi bi-clock"></i>
+                <span>평일 09:00 – 18:00 &nbsp;·&nbsp; 점심 12–13시 &nbsp;·&nbsp; 주말·공휴일 휴무</span>
+            </div>
+            <a th:href="@{/inquiry}" class="btn btn-primary btn-sm ms-auto">
+                <i class="bi bi-pencil-square me-1"></i>온라인 A/S 신청
+            </a>
+        </div>
+
+        <!-- WARRANTY -->
+        <div class="content-card mb-3">
+            <div class="card-body p-4">
+                <h4 class="content-section-title"><i class="bi bi-shield-check"></i>보증 정책</h4>
+                <div class="as-warranty mt-3">
+                    <!-- 무상 -->
+                    <div>
+                        <div class="as-warranty-head free">
+                            <h3 class="as-warranty-title">무상 수리 대상</h3>
+                        </div>
+                        <ul class="as-warranty-list free">
+                            <li>
+                                <i class="bi bi-check2"></i>
+                                정상적인 사용 중 발생한 기계적 결함
+                            </li>
+                            <li>
+                                <i class="bi bi-check2"></i>
+                                제조 과정의 불량으로 인한 고장
+                            </li>
+                            <li>
+                                <i class="bi bi-check2"></i>
+                                소프트웨어 / 펌웨어 오류
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- 유상 -->
+                    <div>
+                        <div class="as-warranty-head paid">
+                            <h3 class="as-warranty-title">유상 수리 대상</h3>
+                        </div>
+                        <ul class="as-warranty-list paid">
+                            <li>
+                                <i class="bi bi-x"></i>
+                                사용자 과실에 의한 파손 (추락, 충돌 등)
+                            </li>
+                            <li>
+                                <i class="bi bi-x"></i>
+                                침수, 습기에 의한 손상
+                            </li>
+                            <li>
+                                <i class="bi bi-x"></i>
+                                임의 개조 및 분해로 인한 고장
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SERVICE CENTER -->
+        <div class="content-card mb-3">
+            <div class="card-body p-4">
+                <h4 class="content-section-title"><i class="bi bi-geo-alt"></i>서비스 센터</h4>
+                <div class="as-center-grid mt-3">
+
+                    <!-- 본사 -->
+                    <div>
+                        <div class="as-center-block-label">본사 / 서비스센터</div>
+                        <div class="as-center-info-row">
+                            <div class="as-center-addr">
+                                부산광역시 강서구 과학산단1로60번길 31<br>
+                                8동 301호 (지사동, 부산테크노파크)
+                            </div>
+                            <div class="as-center-phone">
+                                <i class="bi bi-telephone"></i>
+                                010-3565-9741
+                                <span class="as-center-phone-sub">이성희 대표</span>
+                            </div>
+                            <div class="as-center-phone">
+                                <i class="bi bi-tools"></i>
+                                010-2473-8303
+                                <span class="as-center-phone-sub">원종인 기술</span>
+                            </div>
+                            <div class="as-center-hours">
+                                평일 09:00 – 18:00 &nbsp;(점심 12–13시)
+                            </div>
+                            <div>
+                                <span class="as-center-tag">주말·공휴일 휴무</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 반품 배송지 -->
+                    <div>
+                        <div class="as-center-block-label">반품 배송지</div>
+                        <div class="as-center-info-row">
+                            <div class="as-center-addr">
+                                부산광역시 강서구 과학산단1로60번길 31<br>
+                                8동 301호 (지사동, 부산테크노파크)
+                            </div>
+                            <div class="as-center-phone">
+                                <i class="bi bi-box-seam"></i>
+                                로젠택배 1588-9988
+                            </div>
+                            <div class="as-center-hours">
+                                제품 발송 전 반드시 사전 연락 부탁드립니다.
+                            </div>
+                            <div>
+                                <a href="https://www.ilogen.com/web/personal/tkSearch"
+                                   target="_blank" rel="noopener noreferrer"
+                                   class="as-link-btn">
+                                    <i class="bi bi-arrow-up-right"></i>배송 조회
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 전화 지원 -->
+                    <div>
+                        <div class="as-center-block-label">전화 지원</div>
+                        <div class="as-center-info-row">
+                            <div class="as-center-addr">
+                                방문이 어려우신 경우 전화로<br>빠르게 지원해 드립니다.
+                            </div>
+                            <div class="as-center-phone">
+                                <i class="bi bi-telephone-fill"></i>
+                                010-3565-9741
+                                <span class="as-center-phone-sub">대표</span>
+                            </div>
+                            <div class="as-center-phone">
+                                <i class="bi bi-wrench"></i>
+                                010-2473-8303
+                                <span class="as-center-phone-sub">기술문의</span>
+                            </div>
+                            <div class="as-center-hours">
+                                평일 09:00 – 18:00
+                            </div>
+                            <div>
+                                <a href="mailto:jjang8517@naver.com" class="as-link-btn">
+                                    <i class="bi bi-envelope"></i>jjang8517@naver.com
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- 하단 CTA -->
+        <div class="as-bottom-cta">
+            <div class="as-bottom-cta-text">
+                <h3>A/S를 신청하시겠어요?</h3>
+                <p>온라인으로 간편하게 접수하거나 전화로 문의해 주세요.</p>
+            </div>
+            <div class="as-bottom-cta-actions">
+                <a th:href="@{/inquiry}" class="btn btn-primary">
+                    <i class="bi bi-pencil-square me-1"></i>온라인 신청
+                </a>
+                <a href="tel:010-3565-9741" class="btn btn-outline-primary">
+                    <i class="bi bi-telephone me-1"></i>전화 신청
+                </a>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

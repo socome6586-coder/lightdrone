@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('공지사항')}"></th:block>
+    <style>
+        .notice-meta span { font-size:.85rem; color:#6c757d; }
+        .notice-content { line-height:1.9; font-size:1rem; word-break:break-word; }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<div class="page-header">
+    <div class="page-header-overlay"></div>
+    <div class="container text-center text-white position-relative">
+        <h1 class="display-5 fw-bold">공지사항</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center">
+                <li class="breadcrumb-item"><a th:href="@{/}" class="text-white-50">홈</a></li>
+                <li class="breadcrumb-item"><a th:href="@{/notice}" class="text-white-50">공지사항</a></li>
+                <li class="breadcrumb-item active text-white">상세</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section-padding">
+    <div class="container">
+
+        <div class="card border-0 shadow-sm">
+            <!-- 제목 + 메타 -->
+            <div class="card-header bg-white py-4 px-4 border-bottom">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span th:if="${notice.pinned}" class="badge bg-primary">공지</span>
+                    <h4 class="mb-0 fw-bold" th:text="${notice.title}">제목</h4>
+                </div>
+                <div class="notice-meta d-flex flex-wrap gap-3">
+                    <span><i class="bi bi-person me-1"></i>관리자</span>
+                    <span><i class="bi bi-calendar3 me-1"></i>
+                        <span th:text="${#temporals.format(notice.createdAt, 'yyyy년 MM월 dd일')}"></span>
+                    </span>
+                    <span><i class="bi bi-eye me-1"></i>
+                        <span th:text="${notice.viewCount}"></span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- 본문 -->
+            <div class="card-body px-4 py-4">
+                <div th:if="${notice.imageUrl != null}" class="mb-4 text-center">
+                    <img th:src="${notice.imageUrl}" alt="첨부 이미지"
+                         class="img-fluid rounded shadow-sm" style="max-width:100%; max-height:500px;">
+                </div>
+                <div class="notice-content" th:utext="${notice.content}"></div>
+            </div>
+        </div>
+
+        <!-- 하단 버튼 -->
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <a th:href="@{/notice}" class="btn btn-outline-secondary">
+                <i class="bi bi-list me-1"></i>목록으로
+            </a>
+            <div sec:authorize="hasRole('ADMIN')" class="d-flex gap-2">
+                <a th:href="@{/admin/notices/{id}/edit(id=${notice.id})}" class="btn btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i>수정
+                </a>
+                <form th:action="@{/admin/notices/{id}/delete(id=${notice.id})}" method="post"
+                      onsubmit="return confirm('삭제하시겠습니까?')">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-1"></i>삭제
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

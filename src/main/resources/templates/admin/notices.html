@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('공지사항 관리')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('notices')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('공지사항 관리', '공지 노출과 편집 상태를 한 화면에서 관리합니다.')}"></th:block>
+
+        <div class="admin-section-grid">
+            <div th:if="${successMsg}" class="alert alert-success mb-0"><span th:text="${successMsg}"></span></div>
+            <div th:if="${errorMsg}" class="alert alert-danger mb-0"><span th:text="${errorMsg}"></span></div>
+
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">공지 목록</h3>
+                        <div class="admin-panel-subtitle">총 <span th:text="${notices.totalElements}">0</span>건의 공지사항이 있습니다.</div>
+                    </div>
+                    <a th:href="@{/admin/notices/write}" class="btn btn-primary">
+                        <i class="bi bi-pencil-square me-1"></i>공지 작성
+                    </a>
+                </div>
+
+                <div class="admin-panel-body">
+                    <div class="table-responsive">
+                        <table class="table admin-console-table align-middle mb-0" style="table-layout: fixed;">
+                            <colgroup>
+                                <col style="width: 7%;">
+                                <col style="width: 43%;">
+                                <col style="width: 10%;">
+                                <col style="width: 10%;">
+                                <col style="width: 12%;">
+                                <col style="width: 18%;">
+                            </colgroup>
+                            <thead>
+                            <tr>
+                                <th class="text-center">번호</th>
+                                <th>제목</th>
+                                <th class="text-center">상단 고정</th>
+                                <th class="text-center">조회</th>
+                                <th class="text-center">작성일</th>
+                                <th class="text-center">관리</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="notice, stat : ${notices.content}">
+                                <td class="text-center text-muted small" th:text="${stat.count + (notices.number * notices.size)}"></td>
+                                <td class="text-truncate">
+                                    <a th:href="@{/notice/{id}(id=${notice.id})}"
+                                       class="text-decoration-none text-dark fw-semibold"
+                                       th:text="${notice.title}">공지 제목</a>
+                                </td>
+                                <td class="text-center">
+                                    <span th:if="${notice.pinned}" class="admin-chip">고정</span>
+                                    <span th:unless="${notice.pinned}" class="text-muted small">-</span>
+                                </td>
+                                <td class="text-center text-muted small" th:text="${notice.viewCount}"></td>
+                                <td class="text-center text-muted small" th:text="${#temporals.format(notice.createdAt,'yyyy.MM.dd')}"></td>
+                                <td class="text-center">
+                                    <div class="admin-actions">
+                                        <a th:href="@{/admin/notices/{id}/edit(id=${notice.id})}" class="aa-btn aa-edit">수정</a>
+                                        <span class="aa-sep" aria-hidden="true">|</span>
+                                        <form th:action="@{/admin/notices/{id}/delete(id=${notice.id})}"
+                                              method="post"
+                                              onsubmit="return confirm('공지사항을 삭제하시겠습니까?')">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                            <button type="submit" class="aa-btn aa-del">삭제</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${notices.totalElements == 0}">
+                                <td colspan="6">
+                                    <div class="admin-empty my-3">
+                                        <i class="bi bi-megaphone fs-3 d-block mb-2"></i>
+                                        등록된 공지사항이 없습니다.
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <nav th:if="${notices.totalPages > 1}" class="mt-4">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item" th:classappend="${notices.first ? 'disabled' : ''}">
+                                <a class="page-link" th:href="@{/admin/notices(page=${notices.number - 1})}">이전</a>
+                            </li>
+                            <li class="page-item"
+                                th:each="i : ${#numbers.sequence(0, notices.totalPages - 1)}"
+                                th:classappend="${i == notices.number ? 'active' : ''}">
+                                <a class="page-link" th:href="@{/admin/notices(page=${i})}" th:text="${i + 1}">1</a>
+                            </li>
+                            <li class="page-item" th:classappend="${notices.last ? 'disabled' : ''}">
+                                <a class="page-link" th:href="@{/admin/notices(page=${notices.number + 1})}">다음</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+</body>
+</html>

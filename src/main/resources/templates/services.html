@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('서비스')}"></th:block>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+<div class="page-header">
+        <div class="page-header-overlay"></div>
+        <div class="container text-center text-white position-relative">
+            <h1 class="display-5 fw-bold">서비스</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb justify-content-center">
+                    <li class="breadcrumb-item"><a th:href="@{/}" class="text-white-50">홈</a></li>
+                    <li class="breadcrumb-item active text-white">서비스</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <section class="section-padding">
+        <div class="container">
+            <div class="section-header text-center mb-5">
+                <span class="section-badge">Our Services</span>
+                <h2 class="section-title">전문 드론 서비스</h2>
+                <p class="section-sub">라이트드론이 제공하는 다양한 서비스를 만나보세요.</p>
+            </div>
+
+            <!-- DB 서비스 목록 -->
+            <div th:if="${services != null and !#lists.isEmpty(services)}">
+                <div class="row g-4">
+                    <div class="col-md-6 col-lg-4" th:each="svc, stat : ${services}">
+                        <div class="card service-detail-card h-100 border-0 shadow">
+                            <div class="card-header-img bg-primary d-flex align-items-center justify-content-center"
+                                 style="height:180px;">
+                                <i class="text-white"
+                               th:classappend="${'bi bi-' + (svc.icon != null ? svc.icon : 'drone')}"
+                               style="font-size:5rem; opacity:0.4;"></i>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge bg-primary me-2" th:text="'0' + ${stat.count}">01</span>
+                                    <h5 class="card-title mb-0" th:text="${svc.title}">서비스명</h5>
+                                </div>
+                                <p class="card-text text-muted" th:text="${svc.summary}">요약</p>
+                                <a th:href="@{/services/{id}(id=${svc.id})}" class="btn btn-outline-primary w-100 mt-2">자세히 보기</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 기본 서비스 (DB 없을 때) -->
+            <div th:if="${services == null or #lists.isEmpty(services)}">
+                <div class="row g-4">
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card service-detail-card h-100 border-0 shadow">
+                            <div class="card-header-img bg-primary d-flex align-items-center justify-content-center" style="height:180px;">
+                                <i class="bi bi-camera-video text-white" style="font-size:5rem; opacity:0.4;"></i>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge bg-primary me-2">01</span>
+                                    <h5 class="card-title mb-0">항공 촬영</h5>
+                                </div>
+                                <p class="card-text text-muted">전문 드론으로 촬영하는 고품질 항공 사진 및 영상 서비스. 영화, 광고, 행사, 건설 현장 등 다양한 분야에 활용됩니다.</p>
+                                <a th:href="@{/inquiry}" class="btn btn-outline-primary w-100 mt-2">문의하기</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card service-detail-card h-100 border-0 shadow">
+                            <div class="card-header-img bg-warning d-flex align-items-center justify-content-center" style="height:180px;">
+                                <i class="bi bi-stars text-white" style="font-size:5rem; opacity:0.4;"></i>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge bg-warning me-2">02</span>
+                                    <h5 class="card-title mb-0">드론 라이트쇼</h5>
+                                </div>
+                                <p class="card-text text-muted">수백 대의 드론이 만들어내는 환상적인 빛의 공연. 기업 행사, 지역 축제, 특별한 이벤트에 최적화된 서비스입니다.</p>
+                                <a th:href="@{/inquiry}" class="btn btn-outline-warning w-100 mt-2">문의하기</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card service-detail-card h-100 border-0 shadow">
+                            <div class="card-header-img bg-success d-flex align-items-center justify-content-center" style="height:180px;">
+                                <i class="bi bi-map text-white" style="font-size:5rem; opacity:0.4;"></i>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge bg-success me-2">03</span>
+                                    <h5 class="card-title mb-0">드론 측량</h5>
+                                </div>
+                                <p class="card-text text-muted">정밀 GPS 드론을 활용한 고정밀 지형 측량 및 3D 모델링. 건설, 토목, 농업 분야에 활용됩니다.</p>
+                                <a th:href="@{/inquiry}" class="btn btn-outline-success w-100 mt-2">문의하기</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card service-detail-card h-100 border-0 shadow">
+                            <div class="card-header-img bg-info d-flex align-items-center justify-content-center" style="height:180px;">
+                                <i class="bi bi-mortarboard text-white" style="font-size:5rem; opacity:0.4;"></i>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge bg-info me-2">04</span>
+                                    <h5 class="card-title mb-0">드론 교육</h5>
+                                </div>
+                                <p class="card-text text-muted">국토교통부 자격증 취득 과정부터 전문 촬영 교육까지. 체계적인 커리큘럼으로 드론 전문가를 양성합니다.</p>
+                                <a th:href="@{/inquiry}" class="btn btn-outline-info w-100 mt-2">문의하기</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card service-detail-card h-100 border-0 shadow">
+                            <div class="card-header-img bg-danger d-flex align-items-center justify-content-center" style="height:180px;">
+                                <i class="bi bi-building text-white" style="font-size:5rem; opacity:0.4;"></i>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge bg-danger me-2">05</span>
+                                    <h5 class="card-title mb-0">시설물 점검</h5>
+                                </div>
+                                <p class="card-text text-muted">교량, 송전탑, 풍력발전기 등 접근이 어려운 시설물을 드론으로 안전하게 정밀 점검합니다.</p>
+                                <a th:href="@{/inquiry}" class="btn btn-outline-danger w-100 mt-2">문의하기</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card service-detail-card h-100 border-0 shadow">
+                            <div class="card-header-img bg-secondary d-flex align-items-center justify-content-center" style="height:180px;">
+                                <i class="bi bi-tree text-white" style="font-size:5rem; opacity:0.4;"></i>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge bg-secondary me-2">06</span>
+                                    <h5 class="card-title mb-0">농업용 드론</h5>
+                                </div>
+                                <p class="card-text text-muted">농약 살포, 씨앗 파종, 작황 모니터링 등 스마트 농업을 위한 전문 드론 서비스입니다.</p>
+                                <a th:href="@{/inquiry}" class="btn btn-outline-secondary w-100 mt-2">문의하기</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="bg-primary text-white py-5">
+        <div class="container text-center">
+            <h4 class="fw-bold mb-3">원하시는 서비스가 없으신가요?</h4>
+            <p class="mb-4">맞춤형 드론 서비스를 제안해드립니다. 언제든지 문의해주세요.</p>
+            <a th:href="@{/inquiry}" class="btn btn-light btn-lg text-primary fw-bold">맞춤 서비스 문의</a>
+        </div>
+    </section>
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

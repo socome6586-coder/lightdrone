@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('구매 후기 관리')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('inquiries')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('구매 후기 관리', '후기 목록, 답변 여부, 공개 상태를 관리자 콘솔에서 관리합니다.')}"></th:block>
+
+        <div class="admin-section-grid">
+            <div th:if="${successMsg}" class="alert alert-success">
+                <i class="bi bi-check-circle me-2"></i><span th:text="${successMsg}"></span>
+            </div>
+            <div th:if="${errorMsg}" class="alert alert-danger">
+                <i class="bi bi-exclamation-circle me-2"></i><span th:text="${errorMsg}"></span>
+            </div>
+
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">구매 후기 목록</h3>
+                        <div class="admin-panel-subtitle">
+                            전체 <span th:text="${reviews.totalElements}">0</span>건의 후기를 빠르게 확인하고 바로 답변할 수 있습니다.
+                        </div>
+                    </div>
+                    <a th:href="@{/admin/inquiries(tab='review')}" class="admin-panel-link">통합 문의 화면 보기</a>
+                </div>
+
+                <div class="admin-panel-body">
+                    <div class="table-responsive">
+                        <table class="table admin-console-table align-middle mb-0" style="table-layout: fixed; width: 100%;">
+                            <colgroup>
+                                <col style="width: 7%;">
+                                <col style="width: 12%;">
+                                <col style="width: 25%;">
+                                <col style="width: 12%;">
+                                <col style="width: 10%;">
+                                <col style="width: 12%;">
+                                <col style="width: 10%;">
+                                <col style="width: 12%;">
+                            </colgroup>
+                            <thead>
+                            <tr>
+                                <th class="text-center">번호</th>
+                                <th class="text-center">카테고리</th>
+                                <th>제목</th>
+                                <th class="text-center">작성자</th>
+                                <th class="text-center">작성일</th>
+                                <th class="text-center">답변 상태</th>
+                                <th class="text-center">노출 상태</th>
+                                <th class="text-center">관리</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <th:block th:each="review, stat : ${reviews.content}">
+                                <tr>
+                                    <td class="text-center text-muted small"
+                                        th:text="${stat.count + (reviews.number * reviews.size)}">1</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-warning text-dark small" th:text="${review.category}">제품후기</span>
+                                    </td>
+                                    <td class="small text-truncate">
+                                        <a th:href="@{/admin/reviews/{id}(id=${review.id})}"
+                                           th:text="${review.title}"
+                                           class="text-decoration-none text-dark fw-semibold">후기 제목</a>
+                                    </td>
+                                    <td class="text-center text-muted small"
+                                        th:text="${review.member != null ? review.member.name : '-'}">작성자</td>
+                                    <td class="text-center text-muted small"
+                                        th:text="${#temporals.format(review.createdAt, 'yyyy.MM.dd')}">2026.06.24</td>
+                                    <td class="text-center">
+                                        <span th:if="${review.adminReply != null and !#strings.isEmpty(review.adminReply)}"
+                                              class="admin-status-text done">답변 완료</span>
+                                        <span th:unless="${review.adminReply != null and !#strings.isEmpty(review.adminReply)}"
+                                              class="admin-status-text pending">미답변</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <form th:action="@{/admin/reviews/{id}/toggle-visible(id=${review.id})}"
+                                              method="post" class="d-inline toggle-visible-form">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                            <button type="submit"
+                                                    class="btn btn-sm toggle-visible-btn"
+                                                    th:classappend="${review.visible} ? ' btn-success' : ' btn-outline-secondary'"
+                                                    th:text="${review.visible} ? '공개' : '비공개'">공개</button>
+                                        </form>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-inline-flex gap-2 flex-wrap justify-content-center align-items-center">
+                                            <button class="btn btn-sm btn-primary"
+                                                    type="button"
+                                                    data-bs-toggle="collapse"
+                                                    th:data-bs-target="${'#replyCollapse' + review.id}"
+                                                    aria-expanded="false">
+                                                답변
+                                            </button>
+                                            <span class="admin-actions">
+                                                <a th:href="@{/admin/reviews/{id}(id=${review.id})}"
+                                                   class="aa-btn aa-view">상세</a>
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="bg-light">
+                                    <td colspan="8" class="p-0 border-0">
+                                        <div class="collapse" th:id="${'replyCollapse' + review.id}">
+                                            <div class="p-3 border-top">
+                                                <form th:action="@{/admin/reviews/{id}/reply(id=${review.id})}"
+                                                      method="post" class="review-reply-form">
+                                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                                    <div class="mb-2">
+                                                        <label class="form-label small fw-semibold text-primary">
+                                                            <i class="bi bi-chat-square-text me-1"></i>관리자 답변
+                                                        </label>
+                                                        <textarea name="reply"
+                                                                  class="form-control form-control-sm review-reply-editor"
+                                                                  rows="4"
+                                                                  placeholder="답변 내용을 입력해 주세요. 비워두면 답변이 삭제됩니다."
+                                                                  th:text="${review.adminReply}"></textarea>
+                                                    </div>
+                                                    <div class="d-flex gap-2 flex-wrap">
+                                                        <button type="submit" class="btn btn-sm btn-primary">
+                                                            <i class="bi bi-check-lg me-1"></i>저장
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                                data-bs-toggle="collapse"
+                                                                th:data-bs-target="${'#replyCollapse' + review.id}">
+                                                            닫기
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </th:block>
+
+                            <tr th:if="${reviews.totalElements == 0}">
+                                <td colspan="8">
+                                    <div class="admin-empty my-3">
+                                        <i class="bi bi-star fs-3 d-block mb-2"></i>
+                                        등록된 구매 후기가 없습니다.
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <nav th:if="${reviews.totalPages > 1}" class="mt-4">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item" th:classappend="${reviews.first ? ' disabled' : ''}">
+                                <a class="page-link" th:href="@{/admin/reviews(page=${reviews.number - 1})}">이전</a>
+                            </li>
+                            <li class="page-item"
+                                th:each="i : ${#numbers.sequence(0, reviews.totalPages - 1)}"
+                                th:classappend="${i == reviews.number ? ' active' : ''}">
+                                <a class="page-link" th:href="@{/admin/reviews(page=${i})}" th:text="${i + 1}">1</a>
+                            </li>
+                            <li class="page-item" th:classappend="${reviews.last ? ' disabled' : ''}">
+                                <a class="page-link" th:href="@{/admin/reviews(page=${reviews.number + 1})}">다음</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/lang/summernote-ko-KR.min.js"></script>
+<script>
+    $(function () {
+        const csrfMeta = document.querySelector('meta[name="_csrf"]');
+        const csrf = csrfMeta ? csrfMeta.content : '';
+
+        function summernoteConfig(editorEl) {
+            return {
+                lang: 'ko-KR',
+                dialogsInBody: true,
+                height: 220,
+                placeholder: '답변 내용을 입력해 주세요. 비워두면 답변이 삭제됩니다.',
+                toolbar: [
+                    ['font', ['bold', 'italic', 'underline', 'strikethrough', 'clear']],
+                    ['fontname', ['fontname']],
+                    ['fontsize', ['fontsize']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['insert', ['picture', 'link']],
+                    ['view', ['undo', 'redo']]
+                ],
+                fontNames: ['Noto Sans KR', 'Arial', 'Arial Black', 'Courier New', 'Helvetica', 'Times New Roman'],
+                fontSizes: ['10', '11', '12', '13', '14', '16', '18', '20', '24', '28', '36'],
+                callbacks: {
+                    onImageUpload: function (files) {
+                        const editor = $(editorEl);
+                        for (let i = 0; i < files.length; i++) {
+                            const fd = new FormData();
+                            fd.append('file', files[i]);
+                            fd.append('_csrf', csrf);
+                            fetch('/api/admin/upload-image', {
+                                method: 'POST',
+                                headers: { 'X-CSRF-TOKEN': csrf },
+                                credentials: 'same-origin',
+                                body: fd
+                            }).then(r => {
+                                if (!r.ok) throw new Error('HTTP ' + r.status);
+                                return r.json();
+                            }).then(d => {
+                                if (d.url) editor.summernote('insertImage', d.url);
+                                else throw new Error(d.error || '업로드 오류');
+                            }).catch(err => alert('이미지 업로드 실패: ' + err.message));
+                        }
+                    }
+                }
+            };
+        }
+
+        $(document).on('shown.bs.collapse', function (e) {
+            const textarea = e.target.querySelector('.review-reply-editor');
+            if (!textarea) return;
+            const jq = $(textarea);
+            if (!jq.next('.note-editor').length) {
+                jq.summernote(summernoteConfig(textarea));
+            }
+        });
+
+        $(document).on('submit', '.review-reply-form', function () {
+            const textarea = this.querySelector('.review-reply-editor');
+            if (!textarea) return;
+            const jq = $(textarea);
+            if (jq.next('.note-editor').length) {
+                textarea.value = jq.summernote('code');
+            }
+        });
+
+        $(document).on('submit', '.toggle-visible-form', function (e) {
+            e.preventDefault();
+            const form = this;
+            const btn = $(form).find('.toggle-visible-btn');
+            const visible = btn.hasClass('btn-success');
+
+            fetch(form.action, {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: new FormData(form)
+            }).then(res => {
+                if (!res.ok && !res.redirected) throw new Error('상태 변경 실패');
+                if (visible) {
+                    btn.removeClass('btn-success').addClass('btn-outline-secondary').text('비공개');
+                } else {
+                    btn.removeClass('btn-outline-secondary').addClass('btn-success').text('공개');
+                }
+            }).catch(() => alert('노출 상태 변경에 실패했습니다.'));
+        });
+    });
+</script>
+</body>
+</html>

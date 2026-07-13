@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('공지사항')}"></th:block>
+    <style>
+        .notice-title-link { color: #212529; text-decoration: none; }
+        .notice-title-link:hover { color: var(--bs-primary); }
+        .notice-pin-row { background: #f0f5ff; }
+        .notice-pin-row:hover { background: #e4edff !important; }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<div class="page-header">
+    <div class="page-header-overlay"></div>
+    <div class="container text-center text-white position-relative">
+        <h1 class="display-5 fw-bold">공지사항</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center">
+                <li class="breadcrumb-item"><a th:href="@{/}" class="text-white-50">홈</a></li>
+                <li class="breadcrumb-item active text-white">공지사항</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section-padding">
+    <div class="container">
+
+        <!-- 검색 -->
+        <form th:action="@{/notice}" method="get" class="mb-4">
+            <div class="input-group" style="max-width:400px;">
+                <input type="text" name="keyword" class="form-control"
+                       placeholder="제목으로 검색" th:value="${keyword}">
+                <button class="btn btn-primary" type="submit">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+
+        <!-- 공지 목록 -->
+        <div class="card border-0 shadow-sm" th:if="${notices.totalElements > 0}">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center" style="width:70px;">번호</th>
+                                <th>제목</th>
+                                <th class="text-center d-none d-md-table-cell" style="width:110px;">날짜</th>
+                                <th class="text-center d-none d-md-table-cell" style="width:70px;">조회</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="notice : ${notices.content}"
+                                th:classappend="${notice.pinned} ? 'notice-pin-row' : ''">
+                                <td class="text-center align-middle text-muted small">
+                                    <i th:if="${notice.pinned}" class="bi bi-pin-fill text-primary"></i>
+                                    <span th:unless="${notice.pinned}" th:text="${notice.id}"></span>
+                                </td>
+                                <td class="align-middle">
+                                    <a th:href="@{/notice/{id}(id=${notice.id})}"
+                                       class="notice-title-link">
+                                        <span th:if="${notice.pinned}"
+                                              class="badge bg-primary me-2" style="font-size:.7rem;">공지</span>
+                                        <span th:text="${notice.title}" class="fw-semibold"></span>
+                                    </a>
+                                </td>
+                                <td class="text-center align-middle text-muted small d-none d-md-table-cell"
+                                    th:text="${#temporals.format(notice.createdAt, 'yyyy.MM.dd')}"></td>
+                                <td class="text-center align-middle text-muted small d-none d-md-table-cell"
+                                    th:text="${notice.viewCount}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center py-5" th:if="${notices.totalElements == 0}">
+            <i class="bi bi-bell-slash text-muted" style="font-size:3rem;"></i>
+            <p class="text-muted mt-3">공지사항이 없습니다.</p>
+        </div>
+
+        <!-- 페이지네이션 -->
+        <nav th:if="${notices.totalPages > 1}" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${notices.first ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/notice(page=${notices.number - 1}, keyword=${keyword})}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                <li class="page-item" th:each="i : ${#numbers.sequence(0, notices.totalPages - 1)}"
+                    th:classappend="${i == notices.number ? 'active' : ''}">
+                    <a class="page-link" th:href="@{/notice(page=${i}, keyword=${keyword})}" th:text="${i + 1}">1</a>
+                </li>
+                <li class="page-item" th:classappend="${notices.last ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/notice(page=${notices.number + 1}, keyword=${keyword})}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

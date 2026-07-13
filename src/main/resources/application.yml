@@ -1,0 +1,173 @@
+site:
+  url: ${SITE_URL:https://lightdrone.co.kr}
+
+spring:
+  application:
+    name: lightdrone
+
+  web:
+    locale: ko_KR
+    locale-resolver: fixed
+
+  datasource:
+    # url/username 은 비밀이 아니므로 로컬 기본값 유지(운영은 환경변수로 오버라이드)
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/lightdrone}
+    username: ${DB_USERNAME:lightdrone}
+    # 비밀번호: 기본값 없음. 환경변수 DB_PASSWORD 미설정 시 빈 문자열로 바인딩되어
+    # DB 인증에 실패 → 부팅이 즉시 중단된다(=설정 누락을 조기에 명확히 발견).
+    # 운영/로컬 모두 반드시 env(또는 application-local.yml)로 주입할 것.
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      # 2단계: Flyway baseline 적용 완료 후 validate 로 전환.
+      #  - 이제 스키마는 Flyway 마이그레이션으로만 변경하고, Hibernate 는 매핑↔스키마 일치만 검증한다.
+      #  - 엔티티 변경 시에는 반드시 새 Vn__*.sql 마이그레이션을 추가해야 한다(자동 보정 없음).
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+    open-in-view: false
+
+  # ── Flyway DB 마이그레이션 (1단계: baseline 도입) ──────────────────
+  #  - 기존 DB(이미 스키마가 있는 운영/로컬)는 비어있지 않으므로
+  #    baseline-on-migrate=true 로 version=1 baseline 만 기록하고
+  #    V1__baseline_schema.sql 은 적용하지 않는다 → 기존 스키마 보존.
+  #  - 신규/빈 DB 는 V1__baseline_schema.sql 로 전체 스키마를 생성한다.
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 1
+    baseline-description: "baseline existing schema (pre-flyway)"
+    # 안전장치: 기존 운영 DB 보호. 운영 스키마를 비우거나 새로 만드는 동작을 절대 막는다.
+    clean-disabled: true
+    # baseline 이후 적용될 마이그레이션이 순서대로 비어있어도 부팅 실패하지 않도록 허용.
+    validate-on-migrate: true
+    out-of-order: false
+
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    cache: false
+    encoding: UTF-8
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+
+  # ── 소셜 로그인 (Google / Kakao / Naver) ──────────────────────────
+  # Google Cloud Console → API 및 서비스 → 사용자 인증 정보 → OAuth 2.0 클라이언트 ID 에서
+  #   승인된 리디렉션 URI: https://도메인/login/oauth2/code/google 등록 후 값을 환경변수로 주입
+  # Kakao Developers → 내 애플리케이션 → 앱 키 → REST API 키 를 KAKAO_CLIENT_ID 로,
+  #   제품 설정 → 카카오 로그인 → Redirect URI: https://도메인/login/oauth2/code/kakao 등록
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            # client-id 는 비밀이 아니며, OAuth 자동설정이 빈 값이면 부팅 시 예외가 나므로
+            # 더미 placeholder 를 기본값으로 유지(운영은 GOOGLE_CLIENT_ID 로 실제 값 주입)
+            client-id: ${GOOGLE_CLIENT_ID:google-client-id-placeholder}
+            # client-secret 은 비밀 → 기본값 제거(미설정 시 빈 문자열, 운영은 env 로 주입)
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            scope:
+              - email
+              - profile
+            redirect-uri: "https://lightdrone.co.kr/login/oauth2/code/{registrationId}"
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID:kakao-client-id-placeholder}
+            client-secret: ${KAKAO_CLIENT_SECRET:}
+            authorization-grant-type: authorization_code
+            redirect-uri: "https://lightdrone.co.kr/login/oauth2/code/{registrationId}"
+            client-authentication-method: client_secret_post
+            scope:
+              - profile_nickname
+          # Naver Developers → 애플리케이션 등록 → API 설정 → 로그인 오픈API → 서비스 URL/Callback URL:
+          #   https://도메인/login/oauth2/code/naver 등록 후 Client ID/Secret 을 환경변수로 주입
+          naver:
+            client-id: ${NAVER_CLIENT_ID:naver-client-id-placeholder}
+            client-secret: ${NAVER_CLIENT_SECRET:}
+            authorization-grant-type: authorization_code
+            redirect-uri: "https://lightdrone.co.kr/login/oauth2/code/{registrationId}"
+            scope:
+              - name
+              - email
+            client-name: Naver
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+          naver:
+            authorization-uri: https://nid.naver.com/oauth2.0/authorize
+            token-uri: https://nid.naver.com/oauth2.0/token
+            user-info-uri: https://openapi.naver.com/v1/nid/me
+            user-name-attribute: response
+
+server:
+  port: 8081
+  forward-headers-strategy: native
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+    encoding:
+      charset: UTF-8
+      force: true
+
+file:
+  upload-dir: ${user.home}/lightdrone/uploads
+
+# Coolsms SMS 설정 — 비밀값은 환경변수로만 주입(코드/저장소/JAR 에 평문 금지)
+#   로컬: SMS_API_KEY / SMS_API_SECRET / SMS_SENDER 환경변수 또는 application-local.yml
+#   운영: systemd 등 배포 환경의 환경변수
+#   미설정 시 빈 문자열 → SMS 발송 비활성(부팅은 정상)
+sms:
+  api-key: ${SMS_API_KEY:}
+  api-secret: ${SMS_API_SECRET:}
+  sender: ${SMS_SENDER:}
+
+# 관리자 알림 수신 번호 목록 (쉼표로 여러 개, 환경변수 ADMIN_PHONES). 기본값 없음.
+admin:
+  phones: ${ADMIN_PHONES:}
+
+# 토스페이먼츠 키 — 비밀값. 환경변수로만 주입(미설정 시 빈 문자열 → 결제 비활성).
+#   로컬 테스트: TOSS_CLIENT_KEY / TOSS_SECRET_KEY 에 토스 테스트키 주입
+#   운영: 실제 라이브 키를 배포 환경 환경변수로 주입
+toss:
+  payments:
+    client-key: ${TOSS_CLIENT_KEY:}
+    secret-key: ${TOSS_SECRET_KEY:}
+
+# 카카오 JS SDK 키 (카카오톡 공유 버튼) — 브라우저에 노출되는 것을 전제로 하는
+# "클라이언트 키"로 비밀값이 아니다. 실제 보호는 Kakao Developers 콘솔의
+# 사이트 도메인 등록으로 이뤄지며, 키 교체 시 KAKAO_JS_KEY 환경변수로 오버라이드한다.
+kakao:
+  javascript-key: ${KAKAO_JS_KEY:d45298e13cd21b9912c078259a4984f2}
+
+# 이메일 발송: 호스팅(iwinv)이 아웃바운드 SMTP(25/465/587/2525)를 모두 차단하므로
+# HTTPS(443) 기반 Brevo Transactional Email API 사용.
+# BREVO_API_KEY: Brevo(brevo.com) 가입 → SMTP & API → API Keys 에서 발급
+# MAIL_SENDER_EMAIL: Brevo에서 인증(verified)된 발신 주소 (권장: 도메인 인증된 no-reply@lightdrone.co.kr)
+brevo:
+  api-key: ${BREVO_API_KEY:}
+  api-url: https://api.brevo.com/v3
+  # 발신 주소도 환경변수로 주입(개인 이메일 평문 커밋 방지). 미설정 시 빈 문자열.
+  sender-email: ${MAIL_SENDER_EMAIL:}
+  sender-name: ${MAIL_SENDER_NAME:라이트드론}
+
+logging:
+  level:
+    com.lightdrone: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN
+    org.springframework.security.oauth2: INFO
+    org.springframework.security.web: INFO

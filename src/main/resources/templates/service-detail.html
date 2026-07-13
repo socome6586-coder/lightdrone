@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('서비스')}"></th:block>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+<div class="page-header">
+        <div class="page-header-overlay"></div>
+        <div class="container text-center text-white position-relative">
+            <h1 class="display-5 fw-bold" th:text="${service.title}">서비스</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb justify-content-center">
+                    <li class="breadcrumb-item"><a th:href="@{/}" class="text-white-50">홈</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/services}" class="text-white-50">서비스</a></li>
+                    <li class="breadcrumb-item active text-white" th:text="${service.title}">상세</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <section class="section-padding">
+        <div class="container">
+            <div class="row g-5">
+
+                <!-- 상세 내용 -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4 p-lg-5">
+                            <div class="d-flex align-items-center gap-3 mb-4">
+                                <div class="service-icon-lg bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                     style="width:70px;height:70px;">
+                                    <i th:class="${service.icon != null ? 'bi bi-' + service.icon : 'bi bi-drone'}"
+                                       class="text-primary fs-2"></i>
+                                </div>
+                                <div>
+                                    <h2 class="fw-bold mb-1" th:text="${service.title}">서비스명</h2>
+                                    <p class="text-muted mb-0" th:text="${service.summary}">요약</p>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="service-content mt-4" th:text="${service.content}" style="white-space: pre-wrap;">내용</div>
+                            <div class="mt-5">
+                                <a th:href="@{/inquiry}" class="btn btn-primary btn-lg me-2">
+                                    <i class="bi bi-envelope me-2"></i>서비스 문의하기
+                                </a>
+                                <a th:href="@{/services}" class="btn btn-outline-secondary btn-lg">
+                                    <i class="bi bi-list me-2"></i>목록으로
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 사이드바: 다른 서비스 -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white fw-bold">다른 서비스</div>
+                        <div class="list-group list-group-flush">
+                            <a th:each="svc : ${services}"
+                               th:href="@{/services/{id}(id=${svc.id})}"
+                               class="list-group-item list-group-item-action d-flex align-items-center gap-2"
+                               th:classappend="${svc.id == service.id ? 'active' : ''}">
+                                <i th:class="${svc.icon != null ? 'bi bi-' + svc.icon : 'bi bi-drone'}"></i>
+                                <span th:text="${svc.title}">서비스</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 문의 배너 -->
+                    <div class="card border-0 bg-primary text-white mt-4">
+                        <div class="card-body p-4 text-center">
+                            <i class="bi bi-headset fs-1 mb-3 d-block"></i>
+                            <h6 class="fw-bold">전문 상담이 필요하신가요?</h6>
+                            <p class="small mb-3 opacity-75">전문 상담원이 친절하게 안내해 드립니다.</p>
+                            <p class="fw-bold mb-3"><i class="bi bi-telephone me-2"></i>02-0000-0000</p>
+                            <a th:href="@{/inquiry}" class="btn btn-light text-primary w-100 fw-bold">온라인 문의</a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

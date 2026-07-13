@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('서비스 관리')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('services')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('서비스 관리', 'A/S 및 서비스 안내용 항목을 관리자 화면에서 관리합니다.')}"></th:block>
+
+        <div class="admin-section-grid">
+            <div th:if="${successMsg}" class="alert alert-success mb-0"><span th:text="${successMsg}"></span></div>
+
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">서비스 등록</h3>
+                        <div class="admin-panel-subtitle">아이콘, 요약, 상세 설명을 함께 관리합니다.</div>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <div class="admin-form-card">
+                        <form th:action="@{/admin/services}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">서비스명</label>
+                                    <input type="text" name="title" class="form-control" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">아이콘</label>
+                                    <input type="text" name="icon" class="form-control" placeholder="camera-video">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">순서</label>
+                                    <input type="number" name="sortOrder" class="form-control" value="0">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">요약</label>
+                                    <input type="text" name="summary" class="form-control" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">상세 내용</label>
+                                    <textarea name="content" class="form-control" rows="5" required></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">등록</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">서비스 목록</h3>
+                        <div class="admin-panel-subtitle">총 <span th:text="${#lists.size(services)}">0</span>건</div>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <div class="table-responsive">
+                        <table class="table admin-console-table align-middle mb-0">
+                            <thead>
+                            <tr>
+                                <th>순서</th>
+                                <th>서비스명</th>
+                                <th>요약</th>
+                                <th class="text-center">관리</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="svc : ${services}">
+                                <td th:text="${svc.sortOrder}"></td>
+                                <td>
+                                    <i th:if="${svc.icon}" th:class="'bi bi-' + ${svc.icon} + ' me-2 text-primary'"></i>
+                                    <span class="fw-semibold" th:text="${svc.title}"></span>
+                                </td>
+                                <td class="text-muted small text-truncate" style="max-width: 320px;" th:text="${svc.summary}"></td>
+                                <td class="text-center">
+                                    <div class="admin-actions">
+                                        <form th:action="@{/admin/services/{id}/delete(id=${svc.id})}" method="post"
+                                              onsubmit="return confirm('삭제하시겠습니까?')">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                            <button type="submit" class="aa-btn aa-del">삭제</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(services)}">
+                                <td colspan="4">
+                                    <div class="admin-empty my-3">
+                                        <i class="bi bi-tools fs-3 d-block mb-2"></i>
+                                        등록된 서비스가 없습니다.
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+</body>
+</html>

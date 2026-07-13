@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('공지사항 작성')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('notices')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('공지사항 작성', '운영 공지와 안내 메시지를 관리자 콘솔 안에서 바로 작성합니다.')}"></th:block>
+
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white py-3">
+                            <span class="fw-bold">
+                                <i class="bi bi-pencil-square me-2 text-primary"></i>새 공지사항 작성
+                            </span>
+                        </div>
+                        <div class="card-body p-4">
+                            <form th:action="@{/admin/notices}" method="post"
+                                  enctype="multipart/form-data" th:object="${noticeDto}">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">제목 <span class="text-danger">*</span></label>
+                                    <input type="text" th:field="*{title}" class="form-control"
+                                           th:classappend="${#fields.hasErrors('title')} ? 'is-invalid'"
+                                           placeholder="공지사항 제목을 입력해 주세요.">
+                                    <div class="invalid-feedback" th:errors="*{title}"></div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">내용 <span class="text-danger">*</span></label>
+                                    <textarea th:field="*{content}" class="form-control" rows="12"
+                                              th:classappend="${#fields.hasErrors('content')} ? 'is-invalid'"
+                                              placeholder="공지사항 내용을 입력해 주세요."></textarea>
+                                    <div class="invalid-feedback" th:errors="*{content}"></div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">
+                                        대표 이미지 <span class="text-muted fw-normal small ms-1">(선택)</span>
+                                    </label>
+                                    <input type="file" name="imageFile" class="form-control"
+                                           accept="image/jpeg,image/png,image/gif,image/webp">
+                                    <div class="form-text text-muted">본문 이미지는 에디터에서 직접 삽입할 수 있습니다.</div>
+                                </div>
+
+                                <div class="form-check mb-4">
+                                    <input class="form-check-input" type="checkbox" th:field="*{pinned}" id="pinnedCheck">
+                                    <label class="form-check-label fw-semibold" for="pinnedCheck">
+                                        상단 고정
+                                    </label>
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary px-4">
+                                        <i class="bi bi-save me-1"></i>등록
+                                    </button>
+                                    <a th:href="@{/admin/notices}" class="btn btn-outline-secondary px-4">취소</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/lang/summernote-ko-KR.min.js"></script>
+<script>
+$(function () {
+    const csrfMeta = document.querySelector('meta[name="_csrf"]');
+    const csrf = csrfMeta ? csrfMeta.content : '';
+    $('#content').summernote({
+        lang: 'ko-KR',
+        dialogsInBody: true,
+        height: 400,
+        placeholder: '공지사항 내용을 입력해 주세요.',
+        toolbar: [
+            ['font', ['bold','italic','underline','strikethrough','clear']],
+            ['fontname', ['fontname']],
+            ['fontsize', ['fontsize']],
+            ['color', ['color']],
+            ['para', ['ul','ol','paragraph']],
+            ['insert', ['picture','link','hr']],
+            ['view', ['undo','redo','fullscreen']]
+        ],
+        fontNames: ['Noto Sans KR','Arial','Arial Black','Courier New','Helvetica','Times New Roman'],
+        fontSizes: ['10','11','12','13','14','16','18','20','24','28','36'],
+        callbacks: {
+            onImageUpload: function (files) {
+                const editor = $('#content');
+                for (let i = 0; i < files.length; i++) {
+                    const fd = new FormData();
+                    fd.append('file', files[i]);
+                    fd.append('_csrf', csrf);
+                    fetch('/api/admin/upload-image', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': csrf },
+                        credentials: 'same-origin',
+                        body: fd
+                    }).then(r => {
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return r.json();
+                    }).then(d => {
+                        if (d.url) editor.summernote('insertImage', d.url);
+                        else throw new Error(d.error || '업로드 오류');
+                    }).catch(err => alert('이미지 업로드 실패: ' + err.message));
+                }
+            }
+        }
+    });
+
+    $(document).on('click', '.note-toolbar .dropdown-toggle', function () {
+        const $parent = $(this).closest('.note-btn-group, .btn-group');
+        const $menu = $parent.find('> .dropdown-menu, > .note-dropdown-menu').first();
+        if (!$menu.length) return;
+        const willOpen = !$menu.hasClass('show');
+        $('.note-toolbar .dropdown-menu, .note-toolbar .note-dropdown-menu').removeClass('show');
+        if (willOpen) $menu.addClass('show');
+    });
+
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.note-toolbar .note-btn-group, .note-toolbar .btn-group').length) {
+            $('.note-toolbar .dropdown-menu, .note-toolbar .note-dropdown-menu').removeClass('show');
+        }
+    });
+
+    $(document).on('shown.bs.modal', '.note-modal', function () {
+        $(this).find('input[type="file"]').attr('multiple', true);
+    });
+
+    $('form[action*="/admin/notices"]').on('submit', function () {
+        $('#content').val($('#content').summernote('code'));
+    });
+});
+</script>
+</body>
+</html>

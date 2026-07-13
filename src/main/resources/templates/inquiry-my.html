@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('내 문의')}"></th:block>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<div class="page-header">
+    <div class="page-header-overlay"></div>
+    <div class="container text-center text-white position-relative">
+        <h1 class="display-5 fw-bold">내 문의 내역</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center">
+                <li class="breadcrumb-item"><a th:href="@{/}" class="text-white-50">홈</a></li>
+                <li class="breadcrumb-item active text-white">내 문의</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section-padding">
+    <div class="container">
+        <div class="row g-4">
+
+            <!-- 사이드바 -->
+            <th:block th:replace="~{layout/fragments :: mypageSidebar('inquiry')}"></th:block>
+
+            <!-- 문의 목록 -->
+            <div class="col-md-9">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">
+                            <i class="bi bi-envelope me-2 text-primary"></i>
+                            문의 내역 (<span th:text="${inquiries.totalElements}">0</span>건)
+                        </span>
+                        <a th:href="@{/inquiry}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus me-1"></i>새 문의
+                        </a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-4">제목</th>
+                                        <th class="d-none d-md-table-cell text-center" style="width:120px;">접수일</th>
+                                        <th class="text-center" style="width:90px;">상태</th>
+                                        <th class="text-center" style="width:80px;">상세</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="inq : ${inquiries.content}">
+                                        <td class="ps-4">
+                                            <a th:href="@{/inquiry/{id}/view(id=${inq.id})}"
+                                               class="d-inline-block text-truncate fw-semibold small text-decoration-none text-dark"
+                                               style="max-width:320px;" th:text="${inq.subject}"></a>
+                                        </td>
+                                        <td class="d-none d-md-table-cell text-muted small text-center"
+                                            th:text="${#temporals.format(inq.createdAt,'yyyy.MM.dd')}"></td>
+                                        <td class="text-center">
+                                            <span class="badge rounded-pill"
+                                                  th:classappend="${inq.answered} ? 'bg-success' : 'bg-warning text-dark'"
+                                                  th:text="${inq.answered} ? '답변완료' : '대기중'"></span>
+                                        </td>
+                                        <td class="text-center">
+                                            <a th:href="@{/inquiry/{id}/view(id=${inq.id})}"
+                                               class="btn btn-sm btn-outline-primary px-3">보기</a>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${inquiries.totalElements == 0}">
+                                        <td colspan="4" class="text-center text-muted py-5">
+                                            <i class="bi bi-inbox d-block fs-1 mb-2"></i>
+                                            문의 내역이 없습니다.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 페이지네이션 -->
+                <nav th:if="${inquiries.totalPages > 1}" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item" th:classappend="${inquiries.first ? 'disabled' : ''}">
+                            <a class="page-link" th:href="@{/inquiry/my(page=${inquiries.number - 1})}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item"
+                            th:each="i : ${#numbers.sequence(0, inquiries.totalPages - 1)}"
+                            th:classappend="${i == inquiries.number ? 'active' : ''}">
+                            <a class="page-link"
+                               th:href="@{/inquiry/my(page=${i})}"
+                               th:text="${i + 1}">1</a>
+                        </li>
+                        <li class="page-item" th:classappend="${inquiries.last ? 'disabled' : ''}">
+                            <a class="page-link" th:href="@{/inquiry/my(page=${inquiries.number + 1})}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

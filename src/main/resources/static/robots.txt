@@ -1,0 +1,27 @@
+User-agent: *
+
+# 검색엔진에 노출되면 안 되는 페이지
+Disallow: /admin/
+Disallow: /mypage/
+Disallow: /cart
+Disallow: /order/
+Disallow: /payment/
+Disallow: /auth/
+Disallow: /api/
+Disallow: /error/
+Disallow: /inquiry/my
+Disallow: /quotation/
+
+# 검색엔진에 노출해도 되는 페이지
+Allow: /products/
+Allow: /notice/
+Allow: /qna/
+Allow: /support/
+Allow: /company
+Allow: /inquiry
+Allow: /as
+Allow: /drone-law
+Allow: /privacy
+Allow: /refund
+
+Sitemap: https://lightdrone.co.kr/sitemap.xml

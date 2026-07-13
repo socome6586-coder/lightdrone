@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('주문 / 배송 관리')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+    <style>
+        .reject-btn { white-space: nowrap; }
+        #bulkDeleteBar { transition: opacity .2s; }
+
+        /* 주문 상태: 박스 없이 컬러 점 + 텍스트 (어드민 상태 표시 통일) */
+        .order-status {
+            font-size: 0.82rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .order-status::before {
+            content: "";
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: 1px;
+            background: currentColor;
+        }
+        .os-green  { color: #16a34a; }
+        .os-blue   { color: #4d6fdc; }
+        .os-cyan   { color: #0ea5e9; }
+        .os-gray   { color: #94a3b8; }
+        .os-red    { color: #dc2626; }
+    </style>
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('orders')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('주문 / 배송 관리', '주문 상태 필터링부터 결제 확인, 배송 처리, 취소 주문 정리까지 한 화면에서 관리합니다.')}"></th:block>
+
+        <div class="admin-section-grid">
+            <div th:if="${successMsg}" class="alert alert-success mb-0"><span th:text="${successMsg}"></span></div>
+            <div th:if="${errorMsg}" class="alert alert-danger mb-0"><span th:text="${errorMsg}"></span></div>
+
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">주문 목록</h3>
+                        <div class="admin-panel-subtitle">총 <span th:text="${orders.totalElements}">0</span>건의 주문이 있습니다.</div>
+                    </div>
+                    <a th:href="@{/admin/export/orders.csv}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-filetype-csv me-1"></i>엑셀 내보내기
+                    </a>
+                </div>
+                <div class="admin-panel-body">
+                    <div class="admin-console-toolbar">
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="#" class="btn btn-sm btn-primary status-filter" data-status="all">전체</a>
+                            <a th:each="st : ${orderStatuses}" href="#"
+                               class="btn btn-sm btn-outline-secondary status-filter"
+                               th:data-status="${st.name()}" th:text="${st.label}">상태</a>
+                        </div>
+                    </div>
+
+                    <div id="bulkDeleteBar" class="d-none mb-3">
+                        <form id="bulkDeleteForm" th:action="@{/admin/orders/delete-bulk}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <div class="d-flex align-items-center gap-3 p-3 bg-danger bg-opacity-10 border border-danger rounded-4">
+                                <span class="text-danger fw-semibold small">
+                                    <i class="bi bi-check2-square me-1"></i>
+                                    <span id="selectedCount">0</span>건 선택됨
+                                    <span class="text-muted ms-1">(취소 / 거절 주문만 삭제 가능)</span>
+                                </span>
+                                <button type="submit" class="btn btn-sm btn-danger ms-auto" onclick="return confirmBulkDelete()">선택 삭제</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSelection()">선택 해제</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table admin-console-table align-middle mb-0" id="ordersTable">
+                            <thead>
+                            <tr>
+                                <th style="width: 40px;" class="text-center">
+                                    <input type="checkbox" id="checkAll" class="form-check-input" title="전체 선택">
+                                </th>
+                                <th>주문번호</th>
+                                <th>구매자</th>
+                                <th>상품</th>
+                                <th class="text-end">금액</th>
+                                <th class="text-center">결제</th>
+                                <th class="text-center">상태</th>
+                                <th class="text-center">주문일</th>
+                                <th class="text-center">관리</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="order : ${orders.content}"
+                                th:data-status="${order.status.name()}">
+                                <td class="text-center">
+                                    <input type="checkbox" class="form-check-input order-check"
+                                           th:value="${order.id}"
+                                           th:if="${order.status.name() == 'CANCELLED' or order.status.name() == 'REJECTED'}">
+                                    <span th:unless="${order.status.name() == 'CANCELLED' or order.status.name() == 'REJECTED'}"
+                                          class="text-muted small">-</span>
+                                </td>
+                                <td class="small fw-semibold" th:text="${order.orderNumber}"></td>
+                                <td class="small" th:text="${order.buyerName}"></td>
+                                <td class="small">
+                                    <a th:href="@{/admin/orders/{id}(id=${order.id})}" class="text-decoration-none text-dark">
+                                        <span th:each="item, s : ${order.items}" th:text="${item.productName + (s.last ? '' : ', ')}"></span>
+                                    </a>
+                                </td>
+                                <td class="text-end small fw-bold text-primary" th:text="${#numbers.formatInteger(order.totalPrice,0,'COMMA') + '원'}"></td>
+                                <td class="text-center small" th:text="${order.paymentMethod.label}"></td>
+                                <td class="text-center">
+                                    <span class="order-status"
+                                          th:classappend="${order.status.name() == 'DELIVERED' or order.status.name() == 'CONFIRMED'} ? 'os-green' :
+                                                          (${order.status.name() == 'CANCELLED'} ? 'os-gray' :
+                                                          (${order.status.name() == 'REJECTED'} ? 'os-red' :
+                                                          (${order.status.name() == 'SHIPPING'} ? 'os-cyan' : 'os-blue')))"
+                                          th:text="${order.status.label}"></span>
+                                </td>
+                                <td class="text-center small text-muted" th:text="${#temporals.format(order.createdAt,'MM/dd HH:mm')}"></td>
+                                <td class="text-center">
+                                    <div class="admin-actions">
+                                        <a th:href="@{/admin/orders/{id}(id=${order.id})}" class="aa-btn aa-view">상세</a>
+                                        <span class="aa-sep" aria-hidden="true"
+                                              th:if="${order.status.name() != 'CANCELLED' and order.status.name() != 'REJECTED' and order.status.name() != 'SHIPPING' and order.status.name() != 'DELIVERED'}">|</span>
+                                        <button th:if="${order.status.name() != 'CANCELLED' and order.status.name() != 'REJECTED' and order.status.name() != 'SHIPPING' and order.status.name() != 'DELIVERED'}"
+                                                type="button" class="aa-btn aa-del reject-btn"
+                                                th:data-order-id="${order.id}" th:data-order-number="${order.orderNumber}"
+                                                data-bs-toggle="modal" data-bs-target="#rejectModal"
+                                                onclick="openRejectModal(this)">거절</button>
+                                        <span class="aa-sep" aria-hidden="true"
+                                              th:if="${order.status.name() == 'CANCELLED' or order.status.name() == 'REJECTED'}">|</span>
+                                        <button th:if="${order.status.name() == 'CANCELLED' or order.status.name() == 'REJECTED'}"
+                                                type="button" class="aa-btn aa-del"
+                                                th:data-order-id="${order.id}" th:data-order-number="${order.orderNumber}"
+                                                onclick="openDeleteModal(this)">삭제</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${orders.isEmpty()}">
+                                <td colspan="9">
+                                    <div class="admin-empty my-3">
+                                        <i class="bi bi-bag fs-3 d-block mb-2"></i>
+                                        주문 내역이 없습니다.
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <nav th:if="${orders.totalPages > 1}" class="mt-4">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item" th:classappend="${orders.first} ? 'disabled'">
+                                <a class="page-link" th:href="@{/admin/orders(page=${orders.number - 1})}">이전</a>
+                            </li>
+                            <li th:each="i : ${#numbers.sequence(0, orders.totalPages - 1)}"
+                                class="page-item" th:classappend="${i == orders.number} ? 'active'">
+                                <a class="page-link" th:href="@{/admin/orders(page=${i})}" th:text="${i + 1}"></a>
+                            </li>
+                            <li class="page-item" th:classappend="${orders.last} ? 'disabled'">
+                                <a class="page-link" th:href="@{/admin/orders(page=${orders.number + 1})}">다음</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-danger">
+                <h5 class="modal-title fw-bold text-danger"><i class="bi bi-slash-circle me-2"></i>주문 거절</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="rejectForm" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">주문번호: <strong id="rejectOrderNumber" class="text-dark"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">거절 사유 <span class="text-danger">*</span></label>
+                        <textarea name="rejectReason" id="rejectReasonInput" class="form-control" rows="4"
+                                  placeholder="고객에게 안내할 거절 사유를 입력해 주세요." required style="resize:vertical;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-danger">거절 처리</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-trash me-2 text-danger"></i>주문 삭제</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="deleteForm" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <div class="modal-body">
+                    <p class="mb-2">아래 주문을 영구적으로 삭제합니다.</p>
+                    <p class="small text-muted mb-0">주문번호: <strong id="deleteOrderNumber" class="text-dark"></strong></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-danger">삭제</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+<script>
+function openRejectModal(btn) {
+    var orderId = btn.getAttribute('data-order-id');
+    var orderNumber = btn.getAttribute('data-order-number');
+    document.getElementById('rejectOrderNumber').textContent = orderNumber;
+    document.getElementById('rejectForm').action = '/admin/orders/' + orderId + '/reject';
+    document.getElementById('rejectReasonInput').value = '';
+}
+
+function openDeleteModal(btn) {
+    var orderId = btn.getAttribute('data-order-id');
+    var orderNumber = btn.getAttribute('data-order-number');
+    document.getElementById('deleteOrderNumber').textContent = orderNumber;
+    document.getElementById('deleteForm').action = '/admin/orders/' + orderId + '/delete';
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+document.querySelectorAll('.status-filter').forEach(btn => {
+    btn.addEventListener('click', e => {
+        e.preventDefault();
+        const st = btn.dataset.status;
+        document.querySelectorAll('.status-filter').forEach(b => {
+            b.classList.remove('btn-primary');
+            b.classList.add('btn-outline-secondary');
+        });
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-primary');
+        document.querySelectorAll('tbody tr[data-status]').forEach(row => {
+            row.style.display = (st === 'all' || row.dataset.status === st) ? '' : 'none';
+        });
+        clearSelection();
+    });
+});
+
+const checkAll = document.getElementById('checkAll');
+const bulkBar = document.getElementById('bulkDeleteBar');
+const selectedSpan = document.getElementById('selectedCount');
+
+function getChecked() {
+    return Array.from(document.querySelectorAll('.order-check:checked'));
+}
+
+function updateBulkBar() {
+    const checked = getChecked();
+    selectedSpan.textContent = checked.length;
+    if (checked.length > 0) bulkBar.classList.remove('d-none');
+    else bulkBar.classList.add('d-none');
+    const all = document.querySelectorAll('.order-check');
+    checkAll.indeterminate = checked.length > 0 && checked.length < all.length;
+    checkAll.checked = all.length > 0 && checked.length === all.length;
+}
+
+function clearSelection() {
+    document.querySelectorAll('.order-check').forEach(cb => cb.checked = false);
+    checkAll.checked = false;
+    checkAll.indeterminate = false;
+    bulkBar.classList.add('d-none');
+}
+
+document.querySelectorAll('.order-check').forEach(cb => cb.addEventListener('change', updateBulkBar));
+
+checkAll.addEventListener('change', function () {
+    document.querySelectorAll('tbody tr:not([style*="none"]) .order-check').forEach(cb => {
+        cb.checked = this.checked;
+    });
+    updateBulkBar();
+});
+
+function confirmBulkDelete() {
+    const count = getChecked().length;
+    if (count === 0) {
+        alert('삭제할 주문을 선택해 주세요.');
+        return false;
+    }
+    const form = document.getElementById('bulkDeleteForm');
+    form.querySelectorAll('input[name="ids"]').forEach(el => el.remove());
+    getChecked().forEach(cb => {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'ids';
+        hidden.value = cb.value;
+        form.appendChild(hidden);
+    });
+    return confirm(count + '건의 주문을 삭제하시겠습니까?');
+}
+</script>
+</body>
+</html>

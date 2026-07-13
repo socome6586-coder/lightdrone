@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('매출 통계')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .sales-filter {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 12px;
+        }
+        .sales-filter .field { display: flex; flex-direction: column; gap: 5px; }
+        .sales-filter label { font-size: 0.78rem; color: var(--admin-muted); font-weight: 700; }
+        .sales-filter input[type="date"] {
+            border: 1px solid var(--admin-line);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+        .sales-quick { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        .sales-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .sales-stat-card {
+            border-radius: 18px;
+            background: rgba(255,255,255,0.95);
+            border: 1px solid var(--admin-line);
+            padding: 18px;
+            box-shadow: var(--admin-soft-shadow);
+        }
+        .sales-stat-label { color: var(--admin-muted); font-size: 0.8rem; margin-bottom: 8px; }
+        .sales-stat-value { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.04em; color: var(--admin-primary-deep); }
+        .sales-stat-sub { font-size: 0.76rem; color: var(--admin-muted); margin-top: 4px; }
+
+        .sales-chart-wrap { height: 300px; }
+        .sales-chart-wrap canvas { width: 100% !important; height: 100% !important; }
+
+        @media (max-width: 991.98px) {
+            .sales-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+    </style>
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('sales')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('매출 통계', '기간을 지정해 매출 합계, 추이, 인기 상품, 결제수단 분포를 확인합니다.')}"></th:block>
+
+        <div class="admin-section-grid">
+            <!-- 기간 선택 -->
+            <section class="admin-panel">
+                <div class="admin-panel-body">
+                    <form class="sales-filter" th:action="@{/admin/sales}" method="get">
+                        <div class="field">
+                            <label for="start">시작일</label>
+                            <input type="date" id="start" name="start" th:value="${startDate}">
+                        </div>
+                        <div class="field">
+                            <label for="end">종료일</label>
+                            <input type="date" id="end" name="end" th:value="${endDate}">
+                        </div>
+                        <button type="submit" class="btn btn-primary">조회</button>
+                        <a th:href="@{/admin/export/sales.csv(start=${startDate}, end=${endDate})}"
+                           class="btn btn-outline-success">
+                            <i class="bi bi-filetype-csv me-1"></i>엑셀 내보내기
+                        </a>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 요약 카드 -->
+            <div class="sales-stat-grid">
+                <div class="sales-stat-card">
+                    <div class="sales-stat-label">총 매출</div>
+                    <div class="sales-stat-value" th:text="${#numbers.formatInteger(totalRevenue,0,'COMMA') + '원'}">0원</div>
+                    <div class="sales-stat-sub" th:text="${startDate + ' ~ ' + endDate}">기간</div>
+                </div>
+                <div class="sales-stat-card">
+                    <div class="sales-stat-label">주문 수</div>
+                    <div class="sales-stat-value" th:text="${#numbers.formatInteger(orderCount,0,'COMMA') + '건'}">0건</div>
+                    <div class="sales-stat-sub">취소·거절 제외</div>
+                </div>
+                <div class="sales-stat-card">
+                    <div class="sales-stat-label">평균 주문 금액</div>
+                    <div class="sales-stat-value" th:text="${#numbers.formatInteger(avgOrder,0,'COMMA') + '원'}">0원</div>
+                    <div class="sales-stat-sub">총매출 ÷ 주문수</div>
+                </div>
+                <div class="sales-stat-card">
+                    <div class="sales-stat-label">판매 수량</div>
+                    <div class="sales-stat-value" th:text="${#numbers.formatInteger(totalQuantity,0,'COMMA') + '개'}">0개</div>
+                    <div class="sales-stat-sub">상품 합계 수량</div>
+                </div>
+            </div>
+
+            <!-- 일자별 추이 -->
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">일자별 매출 추이</h3>
+                        <div class="admin-panel-subtitle">기간 내 일별 결제 금액을 라인차트로 표시합니다.</div>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <div class="sales-chart-wrap">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 인기 상품 -->
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">인기 상품 TOP 10</h3>
+                        <div class="admin-panel-subtitle">매출 기준 상위 상품입니다.</div>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <div class="table-responsive">
+                        <table class="table admin-console-table align-middle mb-0">
+                            <thead>
+                            <tr>
+                                <th class="text-center" style="width:60px;">순위</th>
+                                <th>상품명</th>
+                                <th class="text-end">판매 수량</th>
+                                <th class="text-end">매출</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:if="${#lists.isEmpty(bestSellers)}">
+                                <td colspan="4">
+                                    <div class="admin-empty my-3">해당 기간 판매 데이터가 없습니다.</div>
+                                </td>
+                            </tr>
+                            <tr th:each="b, st : ${bestSellers}">
+                                <td class="text-center fw-bold" th:text="${st.count}">1</td>
+                                <td class="fw-semibold" th:text="${b.name}">상품명</td>
+                                <td class="text-end" th:text="${#numbers.formatInteger(b.quantity,0,'COMMA') + '개'}">0개</td>
+                                <td class="text-end fw-bold text-primary" th:text="${#numbers.formatInteger(b.revenue,0,'COMMA') + '원'}">0원</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 결제수단 분포 -->
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">결제수단 분포</h3>
+                        <div class="admin-panel-subtitle">기간 내 결제수단별 주문 수와 매출입니다.</div>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <div class="table-responsive">
+                        <table class="table admin-console-table align-middle mb-0">
+                            <thead>
+                            <tr>
+                                <th>결제수단</th>
+                                <th class="text-end">주문 수</th>
+                                <th class="text-end">매출</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="p : ${paymentBreakdown}">
+                                <td class="fw-semibold" th:text="${p.label}">결제수단</td>
+                                <td class="text-end" th:text="${#numbers.formatInteger(p.count,0,'COMMA') + '건'}">0건</td>
+                                <td class="text-end fw-bold text-primary" th:text="${#numbers.formatInteger(p.revenue,0,'COMMA') + '원'}">0원</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+
+<script th:inline="javascript">
+    (function () {
+        const labels = /*[[${chartLabels}]]*/ '';
+        const data = /*[[${chartData}]]*/ '';
+        const labelArr = labels ? labels.split(',') : [];
+        const dataArr = data ? data.split(',').map(Number) : [];
+        const ctx = document.getElementById('salesChart');
+        if (!ctx) return;
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labelArr,
+                datasets: [{
+                    label: '매출',
+                    data: dataArr,
+                    tension: 0.35,
+                    fill: true,
+                    borderColor: '#4d6fdc',
+                    backgroundColor: 'rgba(77, 111, 220, 0.12)',
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#4d6fdc',
+                    pointBorderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        displayColors: false,
+                        callbacks: {
+                            label: function (context) {
+                                return context.parsed.y.toLocaleString() + '원';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#6b7a99', maxRotation: 0, autoSkip: true } },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(148, 163, 184, 0.14)' },
+                        ticks: {
+                            color: '#6b7a99',
+                            callback: function (value) { return value.toLocaleString(); }
+                        }
+                    }
+                }
+            }
+        });
+    })();
+</script>
+</body>
+</html>

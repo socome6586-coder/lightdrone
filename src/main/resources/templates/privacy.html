@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('개인정보처리방침')}"></th:block>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<div class="page-header">
+    <div class="page-header-overlay"></div>
+    <div class="container text-center text-white position-relative">
+        <h1 class="display-5 fw-bold"><i class="bi bi-shield-lock me-2"></i>개인정보처리방침</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center">
+                <li class="breadcrumb-item"><a th:href="@{/}" class="text-white-50">홈</a></li>
+                <li class="breadcrumb-item active text-white">개인정보처리방침</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+
+                <div class="alert alert-info d-flex gap-2 align-items-start mb-4">
+                    <i class="bi bi-info-circle-fill mt-1 flex-shrink-0"></i>
+                    <div>
+                        <strong>라이트드론</strong>(이하 "회사")은 개인정보보호법에 따라 이용자의 개인정보를 보호하고
+                        이와 관련한 고충을 신속하게 처리할 수 있도록 다음과 같이 개인정보처리방침을 수립·공개합니다.<br>
+                        <span class="small text-muted">시행일: 2026년 01월 01일</span>
+                    </div>
+                </div>
+
+                <!-- 목차 -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-list-ul me-2 text-primary"></i>목차</h6>
+                        <ol class="mb-0 ps-3 small">
+                            <li><a href="#article1" class="text-decoration-none">개인정보의 처리 목적</a></li>
+                            <li><a href="#article2" class="text-decoration-none">개인정보의 처리 및 보유 기간</a></li>
+                            <li><a href="#article3" class="text-decoration-none">개인정보의 제3자 제공</a></li>
+                            <li><a href="#article4" class="text-decoration-none">개인정보 처리 위탁</a></li>
+                            <li><a href="#article5" class="text-decoration-none">정보주체의 권리·의무 및 행사 방법</a></li>
+                            <li><a href="#article6" class="text-decoration-none">처리하는 개인정보 항목</a></li>
+                            <li><a href="#article7" class="text-decoration-none">개인정보의 파기</a></li>
+                            <li><a href="#article8" class="text-decoration-none">개인정보의 안전성 확보 조치</a></li>
+                            <li><a href="#article9" class="text-decoration-none">쿠키의 운영 및 거부</a></li>
+                            <li><a href="#article10" class="text-decoration-none">개인정보 보호책임자</a></li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- 제1조 -->
+                <div id="article1" class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        제1조 (개인정보의 처리 목적)
+                    </div>
+                    <div class="card-body">
+                        <p>회사는 다음의 목적을 위하여 개인정보를 처리합니다. 처리하는 개인정보는 다음의 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경될 시에는 사전 동의를 구할 예정입니다.</p>
+                        <ul class="mb-0">
+                            <li class="mb-2"><strong>회원 가입 및 관리</strong> — 회원 자격 부여, 본인 확인, 서비스 부정 이용 방지, 민원 처리, 공지사항 전달</li>
+                            <li class="mb-2"><strong>재화 또는 서비스 제공</strong> — 상품 주문·배송, 결제·정산, 견적 발행, A/S 처리</li>
+                            <li class="mb-2"><strong>고충 처리</strong> — 민원인 확인, 불만 접수·처리, 처리 결과 통보</li>
+                            <li><strong>마케팅 및 광고 활용</strong> — 이벤트·신상품 안내 (별도 동의한 경우에 한함)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 제2조 -->
+                <div id="article2" class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        제2조 (개인정보의 처리 및 보유 기간)
+                    </div>
+                    <div class="card-body">
+                        <p>회사는 법령에 따른 개인정보 보유·이용 기간 또는 정보주체로부터 개인정보를 수집 시에 동의 받은 개인정보 보유·이용 기간 내에서 개인정보를 처리·보유합니다.</p>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm small mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>처리 목적</th>
+                                        <th>보유 기간</th>
+                                        <th>근거</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>회원 정보</td><td>회원 탈퇴 시 즉시 파기 (익명화)</td><td>회원가입 동의</td></tr>
+                                    <tr><td>주문·결제 기록</td><td>5년</td><td>전자상거래법 제6조</td></tr>
+                                    <tr><td>소비자 불만·분쟁 기록</td><td>3년</td><td>전자상거래법 제6조</td></tr>
+                                    <tr><td>표시·광고 기록</td><td>6개월</td><td>전자상거래법 제6조</td></tr>
+                                    <tr><td>접속 로그·접속 IP</td><td>3개월</td><td>통신비밀보호법 제15조의2</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 제3조 -->
+                <div id="article3" class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        제3조 (개인정보의 제3자 제공)
+                    </div>
+                    <div class="card-body">
+                        <p>회사는 원칙적으로 이용자의 개인정보를 제3자에게 제공하지 않습니다. 다만, 아래의 경우에는 예외로 합니다.</p>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm small mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>제공받는 자</th>
+                                        <th>제공 목적</th>
+                                        <th>제공 항목</th>
+                                        <th>보유 기간</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>로젠택배</td>
+                                        <td>상품 배송</td>
+                                        <td>수령인 성명, 연락처, 배송지 주소</td>
+                                        <td>배송 완료 후 즉시 파기</td>
+                                    </tr>
+                                    <tr>
+                                        <td>A/S 협력업체</td>
+                                        <td>A/S 접수 및 처리</td>
+                                        <td>성명, 연락처</td>
+                                        <td>A/S 완료 후 즉시 파기</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 제4조 -->
+                <div id="article4" class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        제4조 (개인정보 처리 위탁)
+                    </div>
+                    <div class="card-body">
+                        <p>회사는 원활한 서비스 제공을 위해 개인정보 처리를 아래와 같이 위탁하고 있으며, 위탁 계약 시 관련 법령에 따라 안전하게 관리합니다.</p>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm small mb-0">
+                                <thead class="table-light">
+                                    <tr><th>수탁업체</th><th>위탁 업무</th><th>보유 기간</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>토스페이먼츠</td><td>신용카드·계좌이체 등 결제 처리</td><td>위탁 계약 종료 시</td></tr>
+                                    <tr><td>누리고(Coolsms)</td><td>SMS 인증번호 발송</td><td>발송 즉시 파기</td></tr>
+                                    <tr><td>Brevo</td><td>회원가입·주문 안내 이메일 발송</td><td>위탁 계약 종료 시</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 제5조 -->
+                <div id="article5" class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        제5조 (정보주체의 권리·의무 및 행사 방법)
+                    </div>
+                    <div class="card-body">
+                        <p>이용자는 개인정보주체로서 다음과 같은 권리를 행사할 수 있습니다.</p>
+                        <ul class="mb-3">
+                            <li class="mb-1">개인정보 열람 요구</li>
+                            <li class="mb-1">오류 등이 있을 경우 정정 요구</li>
+                            <li class="mb-1">삭제 요구</li>
+                            <li>처리 정지 요구</li>
+                        </ul>
+                        <p class="mb-0">위의 권리 행사는 마이페이지의 <strong>내 정보 수정</strong>에서 직접 처리하거나,
+                            개인정보 보호책임자(jjang8517@naver.com)에게 이메일·전화로 요청하실 수 있으며,
+                            접수 후 <strong>10일 이내</strong>에 조치합니다.</p>
+                    </div>
+                </div>
+
+                <!-- 제6조 -->
+                <div id="article6" class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        제6조 (처리하는 개인정보 항목)
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm small mb-0">
+                                <thead class="table-light">
+                                    <tr><th>구분</th><th>수집 항목</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>회원가입 (필수)</strong></td>
+                                        <td>아이디, 비밀번호, 이름, 이메일, 휴대전화번호</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>회원가입 (선택)</strong></td>
+                                        <td>우편번호, 주소, 상세주소</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>주문·결제</strong></td>
+                                        <td>수령인 이름, 연락처, 배송지 주소, 결제 수단(카드사, 승인번호)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>자동 수집</strong></td>
+                                        <td>IP 주소, 쿠키, 접속 일시, 서비스 이용 기록</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 제7조 -->
+                <div id="article7" class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        제7조 (개인정보의 파기)
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">회사는 개인정보 보유 기간의 경과, 처리 목적 달성 등 개인정보가 불필요하게 되었을 때에는 지체없이 파기합니다.</p>
+                        <ul class="mb-0">
+                            <li class="mb-1"><strong>전자적 파일 형태</strong> — 복구 불가능한 방법으로 영구 삭제</li>
+                            <li><strong>종이 문서</strong> — 분쇄기로 분쇄하거나 소각</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 제8조 -->
+                <div id="article8" class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        제8조 (개인정보의 안전성 확보 조치)
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0">
+                            <li class="mb-1">비밀번호 BCrypt 암호화 저장</li>
+                            <li class="mb-1">개인정보 접근 계정 최소화 및 접근 권한 관리</li>
+                            <li class="mb-1">개인정보처리시스템에 대한 접속 기록 보관</li>
+                            <li>개인정보 취급 직원에 대한 교육 실시</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 제9조 -->
+                <div id="article9" class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        제9조 (쿠키의 운영 및 거부)
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">회사는 이용자에게 개별적인 맞춤 서비스를 제공하기 위해 이용 정보를 저장하고 수시로 불러오는 쿠키(cookie)를 사용합니다.</p>
+                        <p class="mb-0">쿠키 저장을 거부할 경우 웹 브라우저 설정에서 <strong>[도구] → [인터넷 옵션] → [개인정보]</strong> 탭에서 쿠키를 차단할 수 있습니다. 단, 쿠키 설치를 거부할 경우 로그인이 필요한 서비스 이용이 불가능할 수 있습니다.</p>
+                    </div>
+                </div>
+
+                <!-- 제10조 -->
+                <div id="article10" class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        제10조 (개인정보 보호책임자)
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-3">회사는 개인정보 처리에 관한 업무를 총괄해서 책임지고, 이와 관련한 정보주체의 불만 처리 및 피해 구제를 위해 아래와 같이 개인정보 보호책임자를 지정하고 있습니다.</p>
+                        <div class="bg-light rounded p-3">
+                            <p class="mb-1"><strong>개인정보 보호책임자</strong></p>
+                            <ul class="mb-0 small">
+                                <li>성명: 이성희</li>
+                                <li>직책: 대표</li>
+                                <li>이메일: <a href="mailto:jjang8517@naver.com">jjang8517@naver.com</a></li>
+                                <li>전화: 010-3565-9741</li>
+                            </ul>
+                        </div>
+                        <p class="small text-muted mt-3 mb-0">개인정보 침해 신고나 상담이 필요하신 경우 아래 기관에 문의하실 수 있습니다.<br>
+                            • 개인정보침해신고센터: <a href="https://privacy.kisa.or.kr" target="_blank" rel="noopener noreferrer">privacy.kisa.or.kr</a> / (국번없이) 118<br>
+                            • 개인정보분쟁조정위원회: <a href="https://www.kopico.go.kr" target="_blank" rel="noopener noreferrer">www.kopico.go.kr</a>
+                        </p>
+                    </div>
+                </div>
+
+                <p class="text-muted small text-center">본 방침은 2026년 01월 01일부터 시행됩니다.</p>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

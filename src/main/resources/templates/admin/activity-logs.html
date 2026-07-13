@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('활동 로그')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+    <style>
+        /* 알약 배경 없이 글자색만으로 작업 구분: 등록=파랑·수정=초록·삭제=빨강 */
+        .log-action-tag {
+            font-weight: 800;
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+        .log-action-tag.create { color: #1a4fd8; } /* 등록 */
+        .log-action-tag.edit   { color: #1e8e4e; } /* 수정 */
+        .log-action-tag.delete { color: #d92d20; } /* 삭제·취소·거절 */
+        .log-uri { font-size: 0.78rem; color: var(--admin-muted); word-break: break-all; }
+    </style>
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('activity-logs')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('활동 로그', '관리자 콘솔에서 발생한 변경 작업(등록·수정·삭제·처리)을 시간순으로 기록합니다.')}"></th:block>
+
+        <div class="admin-section-grid">
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">관리자 활동 내역</h3>
+                        <div class="admin-panel-subtitle">총 <span th:text="${logs.totalElements}">0</span>건 · 최신순</div>
+                    </div>
+                </div>
+
+                <div class="admin-panel-body">
+                    <div class="table-responsive">
+                        <table class="table admin-console-table align-middle mb-0">
+                            <thead>
+                            <tr>
+                                <th style="width:150px;">일시</th>
+                                <th style="width:110px;">관리자</th>
+                                <th style="width:110px;">메뉴</th>
+                                <th style="width:120px;">작업</th>
+                                <th>요청 경로</th>
+                                <th style="width:130px;">IP</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:if="${logs.isEmpty()}">
+                                <td colspan="6">
+                                    <div class="admin-empty my-3">
+                                        <i class="bi bi-clock-history fs-3 d-block mb-2"></i>
+                                        기록된 활동 로그가 없습니다.
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:each="log : ${logs}">
+                                <td class="small" th:text="${log.createdAt != null ? #temporals.format(log.createdAt, 'yyyy.MM.dd HH:mm') : ''}">2026.06.24 11:20</td>
+                                <td class="fw-semibold" th:text="${log.adminUsername}">admin</td>
+                                <td th:text="${log.menu}">주문</td>
+                                <td>
+                                    <span class="log-action-tag"
+                                          th:classappend="${log.action != null and #strings.contains(log.action, '등록')} ? ' create'
+                                              : (${log.action != null and #strings.contains(log.action, '수정')} ? ' edit'
+                                              : (${log.action != null and (#strings.contains(log.action, '삭제') or #strings.contains(log.action, '취소') or #strings.contains(log.action, '거절'))} ? ' delete' : ''))"
+                                          th:text="${log.action}">작업</span>
+                                </td>
+                                <td class="log-uri" th:text="${log.requestUri}">/admin/orders/1/edit</td>
+                                <td class="small text-muted" th:text="${log.ipAddress}">127.0.0.1</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <nav th:if="${logs.totalPages > 1}" class="mt-4">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item" th:classappend="${logs.first ? 'disabled' : ''}">
+                                <a class="page-link" th:href="@{/admin/activity-logs(page=${logs.number - 1})}">이전</a>
+                            </li>
+                            <li class="page-item"
+                                th:each="i : ${#numbers.sequence(0, logs.totalPages - 1)}"
+                                th:classappend="${i == logs.number ? 'active' : ''}">
+                                <a class="page-link" th:href="@{/admin/activity-logs(page=${i})}" th:text="${i + 1}">1</a>
+                            </li>
+                            <li class="page-item" th:classappend="${logs.last ? 'disabled' : ''}">
+                                <a class="page-link" th:href="@{/admin/activity-logs(page=${logs.number + 1})}">다음</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+</body>
+</html>

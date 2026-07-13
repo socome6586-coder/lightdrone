@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('구매 후기')}"></th:block>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<style>
+    .content-page-banner { margin-bottom: 24px; }
+    .content-page-banner img { display: block; border-radius: 10px; }
+    .rv-item { padding: 0; border-bottom: 1px solid #f0f2f5; }
+    .rv-item:last-child { border-bottom: none; }
+    .rv-row {
+        display: flex; align-items: center; gap: 18px;
+        padding: 18px 24px; cursor: pointer; transition: background .15s;
+    }
+    .rv-row:hover { background: #fafbfc; }
+    /* 번호 */
+    .rv-num {
+        flex-shrink: 0; width: 44px; text-align: center;
+        color: #b0b6bf; font-size: .78rem; font-weight: 500;
+    }
+    /* 썸네일 */
+    .rv-thumb {
+        width: 70px; height: 70px; flex-shrink: 0; border-radius: 0;
+        overflow: hidden; background: #fff; border: 1px solid #e5e8ec;
+    }
+    .rv-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .rv-thumb-empty {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        color: #c4cad3; font-size: 1.5rem; background: #f5f7f9;
+    }
+    /* 본문 요약 */
+    .rv-main { flex-grow: 1; min-width: 0; }
+    .rv-title {
+        font-weight: 700; color: #1f2329; font-size: .9rem; line-height: 1.4;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 5px;
+    }
+    .rv-snippet {
+        display: flex; align-items: center; gap: 7px;
+        color: #707682; font-size: .8rem; line-height: 1.4;
+    }
+    .rv-snippet-text {
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+    }
+    .rv-tag {
+        flex-shrink: 0; font-size: .67rem; font-weight: 600;
+        padding: 1px 6px; border-radius: 4px; line-height: 1.5;
+    }
+    .rv-tag-cat { background: #eef2f7; color: #5b6470; }
+    .rv-tag-reply { background: #e8f0fe; color: #1a4fd8; }
+    .rv-photo-ico {
+        flex-shrink: 0; display: inline-flex; align-items: center;
+        color: #1f9d4d;
+    }
+    .rv-photo-ico svg { width: 15px; height: 15px; display: block; }
+    /* 작성자 / 날짜 (우측 정보) */
+    .rv-author {
+        flex-shrink: 0; width: 118px; text-align: right;
+        color: #707682; font-size: .78rem;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .rv-date {
+        flex-shrink: 0; width: 88px; text-align: right;
+        color: #9aa1ac; font-size: .78rem;
+    }
+    /* 별점 (코랄 ★ 문자) */
+    .rv-stars { flex-shrink: 0; white-space: nowrap; letter-spacing: 1px; font-size: .9rem; }
+    .rv-stars .on  { color: #ff6f61; }
+    .rv-stars .off { color: #e0e3e8; }
+    /* 펼침 버튼 (테두리 박스 + 화살표) */
+    .rv-toggle {
+        flex-shrink: 0; width: 34px; height: 34px; border-radius: 6px;
+        border: 1px solid #dfe3e8; background: #fff;
+        display: flex; align-items: center; justify-content: center;
+        color: #9aa1ac; transition: transform .2s, color .15s, border-color .15s;
+    }
+    .rv-toggle svg { width: 13px; height: 13px; }
+    .rv-row:hover .rv-toggle { border-color: #c4cad3; color: #5b6470; }
+    .rv-row[aria-expanded="true"] .rv-toggle {
+        transform: rotate(180deg); border-color: #1040bc; color: #1040bc;
+    }
+    /* 펼침 내용 */
+    .rv-body { background: #fbfcfe; border-top: 1px solid #f0f2f5; }
+    .rv-body-inner { padding: 22px 24px 26px 90px; }
+    .rv-content {
+        color: #444; font-size: .85rem; line-height: 1.7;
+        word-break: break-word; margin-bottom: 16px;
+    }
+    .rv-content p { margin-bottom: .4rem; }
+    .rv-content p:last-child { margin-bottom: 0; }
+    .rv-photos { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+    .rv-photos .rv-full-img { margin-bottom: 0; }
+    .rv-full-img {
+        max-width: 100%; max-height: 460px; border-radius: 10px;
+        border: 1px solid #eceff3; display: block; margin-bottom: 16px;
+    }
+    .rv-admin-reply {
+        background: #eef3ff; border: 1px solid #dbe6ff; border-radius: 10px;
+        padding: 14px 16px; margin-bottom: 16px;
+    }
+    .rv-admin-head { font-weight: 700; color: #1a4fd8; font-size: .85rem; margin-bottom: 6px; }
+    .rv-admin-reply p { color: #444; font-size: .9rem; line-height: 1.6; }
+    .rv-body-foot { display: flex; justify-content: flex-end; }
+    @media (max-width: 767px) {
+        .rv-author, .rv-date, .rv-num { display: none; }
+    }
+    @media (max-width: 575px) {
+        .rv-row { gap: 12px; padding: 14px 16px; }
+        .rv-thumb { width: 56px; height: 56px; }
+        .rv-body-inner { padding: 16px; }
+    }
+</style>
+
+<section class="content-page">
+    <div class="container">
+
+        <!-- 구매후기 상단 배너 -->
+        <div class="content-page-banner">
+            <img th:src="@{/images/Review.png}" alt="구매 후기" class="img-fluid w-100">
+        </div>
+
+        <div th:if="${successMsg}" class="alert alert-success mb-3"><i class="bi bi-check-circle me-2"></i><span th:text="${successMsg}"></span></div>
+
+        <div class="content-card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="content-section-title mb-0">전체 후기 (<span th:text="${reviews.totalElements}">0</span>건)</h4>
+                    <a th:if="${member != null}" th:href="@{/review/write}" class="btn btn-sm btn-primary">후기 작성</a>
+                    <a th:if="${member == null}" th:href="@{/auth/login}" class="btn btn-sm btn-outline-primary">로그인 후 작성</a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+
+                <div th:if="${#lists.isEmpty(reviews.content)}" class="content-empty">
+                    <p>등록된 후기가 없습니다.</p>
+                </div>
+
+                <div th:each="review : ${reviews.content}" class="content-list-item rv-item">
+                    <!-- 헤더 행 (클릭 시 펼침) -->
+                    <div class="rv-row" data-bs-toggle="collapse"
+                         th:attr="data-bs-target='#rv-' + ${review.id}, aria-controls='rv-' + ${review.id}"
+                         role="button" aria-expanded="false">
+                        <!-- 번호 -->
+                        <div class="rv-num" th:text="${review.id}">0</div>
+                        <!-- 썸네일 (구매 상품 이미지 우선, 없으면 후기 첨부 사진) -->
+                        <div class="rv-thumb"
+                             th:with="thumb=${review.product != null and review.product.imageUrl != null and !#strings.isEmpty(review.product.imageUrl) ? review.product.imageUrl : review.imageUrl}">
+                            <img th:if="${thumb != null and !#strings.isEmpty(thumb)}" th:src="${thumb}" alt="상품 이미지" loading="lazy">
+                            <span th:unless="${thumb != null and !#strings.isEmpty(thumb)}" class="rv-thumb-empty">
+                                <i class="bi bi-image"></i>
+                            </span>
+                        </div>
+                        <!-- 본문 요약 -->
+                        <div class="rv-main">
+                            <div class="rv-title" th:text="${review.title}">제목</div>
+                            <div class="rv-snippet">
+                                <span class="rv-tag rv-tag-cat"
+                                      th:text="${review.productName != null ? review.productName : review.category}">제품</span>
+                                <span class="rv-snippet-text"
+                                      th:text="${review.content != null ? #strings.abbreviate(review.content.replaceAll('&lt;[^&gt;]+&gt;',' ').replaceAll('&amp;nbsp;',' ').trim(), 70) : ''}">후기 내용 미리보기</span>
+                                <span th:if="${review.adminReply != null and !#strings.isEmpty(review.adminReply)}"
+                                      class="rv-tag rv-tag-reply">답글</span>
+                                <span th:if="${!#lists.isEmpty(review.imageUrls) or (review.imageUrl != null and !#strings.isEmpty(review.imageUrl))}"
+                                      class="rv-photo-ico" title="사진 첨부">
+                                    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="1.5" y="2.5" width="13" height="11" rx="1.5"
+                                              stroke="currentColor" stroke-width="1.2"/>
+                                        <circle cx="5.5" cy="6" r="1.2" fill="currentColor"/>
+                                        <path d="M2 11.5l3.2-3 2.3 2.1 3-2.8 3 3.2"
+                                              stroke="currentColor" stroke-width="1.2"
+                                              stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                        <!-- 작성자 -->
+                        <div class="rv-author" th:text="${review.member != null ? review.member.name : '-'}">작성자</div>
+                        <!-- 날짜 -->
+                        <div class="rv-date" th:text="${#temporals.format(review.createdAt, 'yyyy-MM-dd')}">2026-06-15</div>
+                        <!-- 별점 -->
+                        <div class="rv-stars" th:with="r=${review.rating != null ? review.rating : 5}"
+                             th:title="${r + '점'}">
+                            <span th:each="s : ${#numbers.sequence(1,5)}"
+                                  th:classappend="${s &lt;= r} ? 'on' : 'off'">★</span>
+                        </div>
+                        <!-- 펼침 버튼 -->
+                        <span class="rv-toggle">
+                            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <!-- 펼침 내용 -->
+                    <div th:id="'rv-' + ${review.id}" class="collapse rv-body">
+                        <div class="rv-body-inner">
+                            <div class="rv-content" th:utext="${review.content}">내용</div>
+                            <!-- 후기 첨부 사진 (다중) -->
+                            <div th:if="${!#lists.isEmpty(review.imageUrls)}" class="rv-photos">
+                                <img th:each="img : ${review.imageUrls}" th:src="${img}"
+                                     class="rv-full-img" alt="후기 사진" loading="lazy">
+                            </div>
+                            <!-- 구버전(단일 imageUrl만 있는) 후기 호환 -->
+                            <img th:if="${#lists.isEmpty(review.imageUrls) and review.imageUrl != null and !#strings.isEmpty(review.imageUrl)}"
+                                 th:src="${review.imageUrl}" class="rv-full-img" alt="후기 사진" loading="lazy">
+                            <div th:if="${review.adminReply != null and !#strings.isEmpty(review.adminReply)}"
+                                 class="rv-admin-reply">
+                                <div class="rv-admin-head">관리자 답글</div>
+                                <p class="mb-0" th:text="${review.adminReply}"></p>
+                            </div>
+                            <div class="rv-body-foot">
+                                <a th:href="@{/review/{id}(id=${review.id})}" class="btn btn-sm btn-outline-primary">상세 페이지</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="card-footer bg-white py-3" th:if="${reviews.totalPages > 1}">
+                <nav>
+                    <ul class="pagination pagination-sm justify-content-center mb-0"
+                        th:with="startPage=${reviews.number > 2 ? reviews.number - 2 : 0},
+                                 endPage=${reviews.number + 2 < reviews.totalPages - 1 ? reviews.number + 2 : reviews.totalPages - 1}">
+                        <!-- 처음 -->
+                        <li class="page-item" th:classappend="${reviews.first ? 'disabled' : ''}">
+                            <a class="page-link" th:href="@{/review(page=0)}" title="처음">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <!-- 이전 -->
+                        <li class="page-item" th:classappend="${reviews.first ? 'disabled' : ''}">
+                            <a class="page-link" th:href="@{/review(page=${reviews.number - 1})}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        <!-- 앞쪽 생략 -->
+                        <li class="page-item disabled" th:if="${startPage > 0}">
+                            <span class="page-link">…</span>
+                        </li>
+                        <!-- 슬라이딩 윈도우 (현재 ±2) -->
+                        <li class="page-item"
+                            th:each="i : ${#numbers.sequence(startPage, endPage)}"
+                            th:classappend="${i == reviews.number ? 'active' : ''}">
+                            <a class="page-link" th:href="@{/review(page=${i})}" th:text="${i + 1}">1</a>
+                        </li>
+                        <!-- 뒤쪽 생략 -->
+                        <li class="page-item disabled" th:if="${endPage < reviews.totalPages - 1}">
+                            <span class="page-link">…</span>
+                        </li>
+                        <!-- 다음 -->
+                        <li class="page-item" th:classappend="${reviews.last ? 'disabled' : ''}">
+                            <a class="page-link" th:href="@{/review(page=${reviews.number + 1})}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <!-- 마지막 -->
+                        <li class="page-item" th:classappend="${reviews.last ? 'disabled' : ''}">
+                            <a class="page-link" th:href="@{/review(page=${reviews.totalPages - 1})}" title="마지막">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

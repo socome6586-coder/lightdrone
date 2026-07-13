@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('드론 비행 법규 안내')}"></th:block>
+    <style>
+        .drone-law-page {
+            background: #fff;
+        }
+        .drone-law-page .law-wrap {
+            max-width: 940px;
+            margin: 0 auto;
+        }
+        .drone-law-page .page-header {
+            min-height: 190px;
+        }
+        .drone-law-page .page-header h1 {
+            font-size: 2rem;
+            letter-spacing: 0;
+        }
+        .drone-law-page .page-header .lead {
+            font-size: 0.98rem;
+        }
+        .drone-law-page .section-padding {
+            padding-top: 42px;
+            padding-bottom: 54px;
+        }
+        .law-notice {
+            border: 1px solid #e2e5eb;
+            border-left: 3px solid #d69d00;
+            background: #fff;
+            padding: 13px 16px;
+            font-size: 0.9rem;
+            color: #343a40;
+            margin-bottom: 22px;
+        }
+        .law-panel {
+            border: 1px solid #dde2ea;
+            background: #fff;
+            margin-bottom: 20px;
+        }
+        .law-panel-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #dde2ea;
+            background: #f8f9fb;
+            color: #172033;
+            font-weight: 700;
+            font-size: 0.96rem;
+        }
+        .law-panel-title.is-danger {
+            color: #b02a37;
+        }
+        .law-panel-title.is-dark {
+            color: #111827;
+        }
+        .law-panel-body {
+            padding: 16px;
+        }
+        .law-table {
+            margin-bottom: 10px;
+            border-color: #dce1e8;
+            font-size: 0.88rem;
+        }
+        .law-table th {
+            background: #f6f7f9;
+            color: #1f2937;
+            font-weight: 700;
+            padding: 10px 12px;
+            border-color: #dce1e8;
+        }
+        .law-table td {
+            padding: 10px 12px;
+            color: #333;
+            vertical-align: middle;
+            border-color: #e2e6ed;
+        }
+        .law-text-ok,
+        .law-text-warn,
+        .law-text-danger {
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .law-text-ok { color: #1f7a4d; }
+        .law-text-warn { color: #b58100; }
+        .law-text-danger { color: #d63345; }
+        .law-note {
+            color: #6b7280;
+            font-size: 0.84rem;
+            margin: 0;
+        }
+        .law-split-box {
+            border: 1px solid #e0e4eb;
+            background: #fff;
+            height: 100%;
+            padding: 14px 16px;
+        }
+        .law-split-box h6 {
+            font-size: 0.92rem;
+            margin-bottom: 8px;
+        }
+        .law-split-box ul {
+            padding-left: 17px;
+            margin-bottom: 0;
+            color: #444;
+        }
+        .law-split-box li {
+            margin: 4px 0;
+        }
+        .law-check-list {
+            margin: 0;
+            padding-left: 0;
+            list-style: none;
+        }
+        .law-check-list li {
+            display: flex;
+            gap: 8px;
+            padding: 7px 0;
+            border-bottom: 1px solid #f0f2f5;
+            font-size: 0.88rem;
+            color: #3f4652;
+        }
+        .law-check-list li:last-child {
+            border-bottom: 0;
+        }
+        .law-link-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .law-link-row a {
+            display: block;
+            border: 1px solid #d9e1ee;
+            padding: 9px 10px;
+            color: #185abc;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.86rem;
+            text-align: center;
+        }
+        .law-link-row a:hover {
+            background: #f5f8ff;
+        }
+        @media (max-width: 767px) {
+            .drone-law-page .section-padding {
+                padding-top: 28px;
+            }
+            .law-panel-body {
+                padding: 12px;
+            }
+            .law-link-row {
+                grid-template-columns: 1fr;
+            }
+            .law-table {
+                font-size: 0.82rem;
+            }
+            .law-table th,
+            .law-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body class="drone-law-page">
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<div class="page-header">
+    <div class="page-header-overlay"></div>
+    <div class="container text-center text-white position-relative">
+        <h1 class="display-5 fw-bold"><i class="bi bi-shield-check me-2"></i>드론 비행 법규 안내</h1>
+        <p class="lead opacity-75">안전하고 합법적인 드론 운용을 위한 필수 정보</p>
+    </div>
+</div>
+
+<section class="section-padding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-9 law-wrap">
+
+                <!-- 주의 배너 -->
+                <div class="law-notice d-flex gap-3 align-items-start">
+                    <i class="bi bi-exclamation-triangle-fill text-warning mt-1"></i>
+                    <div>
+                        <strong>이 페이지는 참고용 정보입니다.</strong><br>
+                        법령은 수시로 개정될 수 있으므로, 실제 비행 전 반드시
+                        <a href="https://drone.onestop.go.kr/" target="_blank" rel="noopener noreferrer" class="fw-semibold">드론 원스톱 민원 포털(Ready to Fly)</a>에서
+                        최신 정보를 확인하세요.
+                    </div>
+                </div>
+
+                <!-- 1. 드론 등록 -->
+                <div class="law-panel">
+                    <div class="law-panel-title">
+                        <i class="bi bi-clipboard-check me-2"></i>1. 드론 신고 · 등록 의무
+                    </div>
+                    <div class="law-panel-body">
+                        <table class="table table-bordered law-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>기체 중량</th>
+                                    <th>신고 여부</th>
+                                    <th>비고</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>250g 미만</td>
+                                    <td><span class="law-text-ok">신고 불필요</span></td>
+                                    <td>취미용 완구류 등</td>
+                                </tr>
+                                <tr>
+                                    <td>250g 이상 ~ 2kg 이하</td>
+                                    <td><span class="law-text-warn">온라인 신고</span></td>
+                                    <td>드론 원스톱 포털 신고</td>
+                                </tr>
+                                <tr>
+                                    <td>2kg 초과</td>
+                                    <td><span class="law-text-danger">지방항공청 신고</span></td>
+                                    <td>사업용은 보험 가입 필수</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="law-note">
+                            <i class="bi bi-link-45deg me-1"></i>
+                            신고: <a href="https://drone.onestop.go.kr/" target="_blank" rel="noopener noreferrer">드론 원스톱 민원 포털(Ready to Fly)</a>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 2. 조종자 자격 -->
+                <div class="law-panel">
+                    <div class="law-panel-title">
+                        <i class="bi bi-person-badge me-2"></i>2. 조종자 자격증 (항공안전법)
+                    </div>
+                    <div class="law-panel-body">
+                        <table class="table table-bordered law-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>기체 중량</th>
+                                    <th>사업용</th>
+                                    <th>비사업용(취미)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>250g 미만</td>
+                                    <td>자격 불필요</td>
+                                    <td>자격 불필요</td>
+                                </tr>
+                                <tr>
+                                    <td>250g 이상 ~ 2kg 이하</td>
+                                    <td><span class="law-text-danger">4종 자격 필요</span></td>
+                                    <td>자격 불필요</td>
+                                </tr>
+                                <tr>
+                                    <td>2kg 초과 ~ 7kg 이하</td>
+                                    <td><span class="law-text-danger">4종 자격 필요</span></td>
+                                    <td><span class="law-text-danger">4종 자격 필요</span></td>
+                                </tr>
+                                <tr>
+                                    <td>7kg 초과 ~ 25kg 이하</td>
+                                    <td><span class="law-text-danger">2종 이상 자격 필요</span></td>
+                                    <td><span class="law-text-danger">2종 이상 자격 필요</span></td>
+                                </tr>
+                                <tr>
+                                    <td>25kg 초과</td>
+                                    <td><span class="law-text-danger">1종 자격 필요</span></td>
+                                    <td><span class="law-text-danger">1종 자격 필요</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="law-note">
+                            <i class="bi bi-info-circle me-1"></i>
+                            4종 자격: 온라인 6시간 교육 이수 / 1·2·3종: 필기 + 실기 시험 합격
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 3. 비행 금지 구역 -->
+                <div class="law-panel">
+                    <div class="law-panel-title is-danger">
+                        <i class="bi bi-geo-alt me-2"></i>3. 비행 금지 · 제한 구역
+                    </div>
+                    <div class="law-panel-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="law-split-box">
+                                    <h6 class="fw-bold text-danger"><i class="bi bi-x-circle me-1"></i>비행 금지 구역 (절대 불가)</h6>
+                                    <ul class="small mb-0">
+                                        <li>비행금지구역 (P-73: 서울 도심 등)</li>
+                                        <li>공항 반경 9.3km 이내</li>
+                                        <li>군사시설 주변</li>
+                                        <li>원자력 발전소 주변</li>
+                                        <li>청와대(경복궁) 주변</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="law-split-box">
+                                    <h6 class="fw-bold text-warning"><i class="bi bi-exclamation-circle me-1"></i>승인 필요 구역</h6>
+                                    <ul class="small mb-0">
+                                        <li>관제권 (공항 주변)</li>
+                                        <li>비행제한구역 (R 구역)</li>
+                                        <li>야간 비행 (일몰~일출)</li>
+                                        <li>가시권 밖 비행</li>
+                                        <li>인구밀집지역 저고도 비행</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="law-note mt-3">
+                            <i class="bi bi-map me-1"></i>
+                            비행 가능 구역 확인:
+                            <a href="https://drone.onestop.go.kr/" target="_blank" rel="noopener noreferrer">Ready to Fly</a> /
+                            <a href="https://www.airportal.go.kr" target="_blank" rel="noopener noreferrer">국토교통부 항공정보포털</a>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 4. 비행 준수 사항 -->
+                <div class="law-panel">
+                    <div class="law-panel-title">
+                        <i class="bi bi-list-check me-2"></i>4. 비행 시 준수 사항
+                    </div>
+                    <div class="law-panel-body">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <ul class="law-check-list">
+                                    <li>
+                                        <i class="bi bi-check2-circle text-success me-2"></i>최대 비행 고도 150m 이하 (승인 구역 제외)
+                                    </li>
+                                    <li>
+                                        <i class="bi bi-check2-circle text-success me-2"></i>조종자 육안으로 기체 식별 가능 거리 비행
+                                    </li>
+                                    <li>
+                                        <i class="bi bi-check2-circle text-success me-2"></i>낮 시간대 비행 원칙 (야간 비행 시 승인 필요)
+                                    </li>
+                                    <li>
+                                        <i class="bi bi-check2-circle text-success me-2"></i>음주 상태 조종 금지
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="law-check-list">
+                                    <li>
+                                        <i class="bi bi-check2-circle text-success me-2"></i>사람·차량 위 직접 비행 금지
+                                    </li>
+                                    <li>
+                                        <i class="bi bi-check2-circle text-success me-2"></i>낙하물 투하 금지 (농약 등 허가 필요)
+                                    </li>
+                                    <li>
+                                        <i class="bi bi-check2-circle text-success me-2"></i>유인항공기 접근 시 즉시 양보
+                                    </li>
+                                    <li>
+                                        <i class="bi bi-check2-circle text-success me-2"></i>비행 전 기체 점검 철저
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. 위반 시 처벌 -->
+                <div class="law-panel">
+                    <div class="law-panel-title is-dark">
+                        <i class="bi bi-gavel me-2"></i>5. 위반 시 처벌 (항공안전법)
+                    </div>
+                    <div class="law-panel-body">
+                        <table class="table table-bordered law-table mb-0">
+                            <thead class="table-light">
+                                <tr><th>위반 내용</th><th>처벌</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>비행금지구역 무단 비행</td><td>200만원 이하 과태료</td></tr>
+                                <tr><td>신고 없이 기체 운용</td><td>6개월 이하 징역 또는 500만원 이하 벌금</td></tr>
+                                <tr><td>자격증 없이 사업용 비행</td><td>1년 이하 징역 또는 1000만원 이하 벌금</td></tr>
+                                <tr><td>야간·가시권 외 비행 (미승인)</td><td>200만원 이하 과태료</td></tr>
+                                <tr><td>음주 조종</td><td>500만원 이하 과태료</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 유용한 링크 -->
+                <div class="law-panel">
+                    <div class="law-panel-title">
+                        <i class="bi bi-link-45deg me-2"></i>유용한 링크
+                    </div>
+                    <div class="law-panel-body law-link-row">
+                        <a href="https://drone.onestop.go.kr/" target="_blank" rel="noopener noreferrer"
+                           >
+                            <i class="bi bi-box-arrow-up-right me-1"></i>드론 원스톱 포털 (Ready to Fly)
+                        </a>
+                        <a href="https://www.airportal.go.kr" target="_blank" rel="noopener noreferrer"
+                           >
+                            <i class="bi bi-box-arrow-up-right me-1"></i>국토교통부 항공정보포털
+                        </a>
+                        <a href="https://lic.kotsa.or.kr/airtest/main.do" target="_blank" rel="noopener noreferrer"
+                           >
+                            <i class="bi bi-box-arrow-up-right me-1"></i>한국교통안전공단 (자격증)
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

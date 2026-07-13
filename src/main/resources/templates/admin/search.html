@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('통합검색')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+    <style>
+        .search-hero-form {
+            display: flex;
+            gap: 10px;
+            max-width: 640px;
+        }
+        .search-hero-form input {
+            flex: 1;
+            min-width: 0;
+            height: 48px;
+            border: 1px solid var(--admin-line);
+            border-radius: 14px;
+            padding: 0 16px;
+            font-size: 0.98rem;
+            background: #fff;
+        }
+        .search-hero-form input:focus {
+            outline: none;
+            border-color: var(--admin-primary);
+            box-shadow: 0 0 0 3px rgba(77, 111, 220, 0.16);
+        }
+        .search-hero-form button {
+            height: 48px;
+            padding: 0 22px;
+            border: 0;
+            border-radius: 14px;
+            background: var(--admin-primary);
+            color: #fff;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .search-count-chip {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 10px;
+            border-radius: 999px;
+            background: rgba(77, 111, 220, 0.12);
+            color: var(--admin-primary-deep);
+            font-size: 0.78rem;
+            font-weight: 700;
+            vertical-align: 2px;
+        }
+        .search-empty {
+            text-align: center;
+            color: var(--admin-muted);
+            padding: 40px 0;
+        }
+        .search-empty i { font-size: 2rem; opacity: 0.5; }
+        .order-status { font-size: 0.82rem; font-weight: 700; white-space: nowrap; }
+        .order-status::before {
+            content: ""; display: inline-block; width: 7px; height: 7px;
+            border-radius: 50%; margin-right: 5px; vertical-align: 1px; background: currentColor;
+        }
+        .os-green { color: #16a34a; } .os-blue { color: #4d6fdc; }
+        .os-cyan { color: #0ea5e9; } .os-gray { color: #94a3b8; } .os-red { color: #dc2626; }
+    </style>
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('통합검색', '상품·주문·회원·문의·Q&amp;A·후기를 한 번에 검색합니다.')}"></th:block>
+
+        <div class="admin-section-grid">
+            <section class="admin-panel">
+                <div class="admin-panel-body">
+                    <form class="search-hero-form" th:action="@{/admin/search}" method="get">
+                        <input type="text" name="q" th:value="${keyword}"
+                               placeholder="상품·주문·회원·문의를 이름·번호·연락처 등으로 검색" autofocus>
+                        <button type="submit"><i class="bi bi-search me-1"></i>검색</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 검색어 없음 -->
+            <section th:if="${keyword == null or keyword.isEmpty()}" class="admin-panel">
+                <div class="admin-panel-body">
+                    <div class="search-empty">
+                        <i class="bi bi-search d-block mb-2"></i>
+                        검색어를 입력하면 상품·주문·회원을 한 번에 찾아드립니다.
+                    </div>
+                </div>
+            </section>
+
+            <th:block th:if="${keyword != null and !keyword.isEmpty()}">
+                <!-- 전체 결과 없음 -->
+                <section th:if="${resultTotal == 0}" class="admin-panel">
+                    <div class="admin-panel-body">
+                        <div class="search-empty">
+                            <i class="bi bi-inbox d-block mb-2"></i>
+                            '<span th:text="${keyword}"></span>'에 대한 검색 결과가 없습니다.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 상품 -->
+                <section th:if="${productTotal > 0}" class="admin-panel">
+                    <div class="admin-panel-header">
+                        <div>
+                            <h3 class="admin-panel-title">
+                                <i class="bi bi-box-seam me-1"></i>상품
+                                <span class="search-count-chip" th:text="${productTotal} + '건'">0건</span>
+                            </h3>
+                            <div class="admin-panel-subtitle">상품명 또는 상품코드가 일치하는 상품입니다.</div>
+                        </div>
+                        <a th:href="@{/admin/products(keyword=${keyword})}" class="btn btn-outline-primary btn-sm">
+                            상품 목록에서 보기<i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                    <div class="admin-panel-body">
+                        <div class="table-responsive">
+                            <table class="table admin-console-table align-middle mb-0">
+                                <thead>
+                                <tr>
+                                    <th>상품명</th>
+                                    <th class="d-none d-md-table-cell">상품코드</th>
+                                    <th class="d-none d-md-table-cell">카테고리</th>
+                                    <th class="text-end">가격</th>
+                                    <th class="text-center">재고</th>
+                                    <th class="text-center">관리</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="p : ${products}">
+                                    <td class="fw-semibold small" th:text="${p.name}"></td>
+                                    <td class="d-none d-md-table-cell text-muted small" th:text="${p.productCode ?: '-'}"></td>
+                                    <td class="d-none d-md-table-cell text-muted small" th:text="${p.category ?: '-'}"></td>
+                                    <td class="text-end small"
+                                        th:text="${p.priceOnRequest} ? '가격문의' : (${#numbers.formatInteger(p.price, 0, 'COMMA')} + '원')"></td>
+                                    <td class="text-center small" th:text="${p.stock} + '개'"></td>
+                                    <td class="text-center">
+                                        <span class="admin-actions"><a th:href="@{/admin/products/{id}(id=${p.id})}" class="aa-btn aa-view">상세</a></span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div th:if="${productTotal > previewLimit}" class="text-muted small mt-2">
+                            상위 <span th:text="${previewLimit}">8</span>건만 표시 중입니다. 전체는 상품 목록에서 확인하세요.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 주문 -->
+                <section th:if="${!#lists.isEmpty(orders)}" class="admin-panel">
+                    <div class="admin-panel-header">
+                        <div>
+                            <h3 class="admin-panel-title">
+                                <i class="bi bi-bag-check me-1"></i>주문
+                                <span class="search-count-chip" th:text="${#lists.size(orders)} + '건'">0건</span>
+                            </h3>
+                            <div class="admin-panel-subtitle">주문번호·구매자명·연락처가 일치하는 주문입니다.</div>
+                        </div>
+                    </div>
+                    <div class="admin-panel-body">
+                        <div class="table-responsive">
+                            <table class="table admin-console-table align-middle mb-0">
+                                <thead>
+                                <tr>
+                                    <th>주문번호</th>
+                                    <th>구매자</th>
+                                    <th class="d-none d-md-table-cell">연락처</th>
+                                    <th class="text-end">결제금액</th>
+                                    <th class="text-center">상태</th>
+                                    <th class="text-center d-none d-lg-table-cell">주문일</th>
+                                    <th class="text-center">관리</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="order : ${orders}">
+                                    <td class="fw-semibold small" th:text="${order.orderNumber}"></td>
+                                    <td class="small" th:text="${order.buyerName}"></td>
+                                    <td class="d-none d-md-table-cell text-muted small" th:text="${order.buyerPhone ?: '-'}"></td>
+                                    <td class="text-end small" th:text="${#numbers.formatInteger(order.totalPrice, 0, 'COMMA')} + '원'"></td>
+                                    <td class="text-center">
+                                        <span class="order-status"
+                                              th:classappend="${order.status.name() == 'DELIVERED' or order.status.name() == 'PAID'} ? 'os-green' :
+                                                              (${order.status.name() == 'CANCELLED'} ? 'os-gray' :
+                                                              (${order.status.name() == 'REJECTED'} ? 'os-red' :
+                                                              (${order.status.name() == 'SHIPPING'} ? 'os-cyan' : 'os-blue')))"
+                                              th:text="${order.status.label}"></span>
+                                    </td>
+                                    <td class="text-center text-muted small d-none d-lg-table-cell"
+                                        th:text="${#temporals.format(order.createdAt,'yyyy.MM.dd')}"></td>
+                                    <td class="text-center">
+                                        <span class="admin-actions"><a th:href="@{/admin/orders/{id}(id=${order.id})}" class="aa-btn aa-view">상세</a></span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 회원 -->
+                <section th:if="${!#lists.isEmpty(members)}" class="admin-panel">
+                    <div class="admin-panel-header">
+                        <div>
+                            <h3 class="admin-panel-title">
+                                <i class="bi bi-people me-1"></i>회원
+                                <span class="search-count-chip" th:text="${#lists.size(members)} + '건'">0건</span>
+                            </h3>
+                            <div class="admin-panel-subtitle">이름·아이디·이메일·연락처가 일치하는 회원입니다.</div>
+                        </div>
+                    </div>
+                    <div class="admin-panel-body">
+                        <div class="table-responsive">
+                            <table class="table admin-console-table align-middle mb-0">
+                                <thead>
+                                <tr>
+                                    <th>아이디</th>
+                                    <th>이름</th>
+                                    <th class="d-none d-md-table-cell">이메일</th>
+                                    <th class="d-none d-md-table-cell">연락처</th>
+                                    <th class="text-center">권한</th>
+                                    <th class="text-center">관리</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="member : ${members}">
+                                    <td class="fw-semibold small" th:text="${member.username}"></td>
+                                    <td class="small" th:text="${member.name}"></td>
+                                    <td class="d-none d-md-table-cell text-muted small text-truncate" th:text="${member.email}"></td>
+                                    <td class="d-none d-md-table-cell text-muted small" th:text="${member.phone ?: '-'}"></td>
+                                    <td class="text-center small"
+                                        th:text="${member.role.name() == 'ADMIN'} ? '관리자' : '일반'"></td>
+                                    <td class="text-center">
+                                        <span class="admin-actions"><a th:href="@{/admin/members/{id}/edit(id=${member.id})}" class="aa-btn aa-edit">수정</a></span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 문의 -->
+                <section th:if="${!#lists.isEmpty(inquiries)}" class="admin-panel">
+                    <div class="admin-panel-header">
+                        <div>
+                            <h3 class="admin-panel-title">
+                                <i class="bi bi-chat-dots me-1"></i>문의
+                                <span class="search-count-chip" th:text="${#lists.size(inquiries)} + '건'">0건</span>
+                            </h3>
+                            <div class="admin-panel-subtitle">이름·이메일·연락처·제목이 일치하는 견적문의입니다.</div>
+                        </div>
+                    </div>
+                    <div class="admin-panel-body">
+                        <div class="table-responsive">
+                            <table class="table admin-console-table align-middle mb-0">
+                                <thead>
+                                <tr>
+                                    <th>제목</th>
+                                    <th>작성자</th>
+                                    <th class="d-none d-md-table-cell">연락처</th>
+                                    <th class="text-center">답변</th>
+                                    <th class="text-center d-none d-lg-table-cell">등록일</th>
+                                    <th class="text-center">관리</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="inquiry : ${inquiries}">
+                                    <td class="fw-semibold small text-truncate" style="max-width:260px;" th:text="${inquiry.subject}"></td>
+                                    <td class="small" th:text="${inquiry.name}"></td>
+                                    <td class="d-none d-md-table-cell text-muted small" th:text="${inquiry.phone ?: '-'}"></td>
+                                    <td class="text-center">
+                                        <span class="order-status" th:classappend="${inquiry.answered} ? 'os-green' : 'os-gray'"
+                                              th:text="${inquiry.answered} ? '답변완료' : '미답변'"></span>
+                                    </td>
+                                    <td class="text-center text-muted small d-none d-lg-table-cell"
+                                        th:text="${#temporals.format(inquiry.createdAt,'yyyy.MM.dd')}"></td>
+                                    <td class="text-center">
+                                        <span class="admin-actions"><a th:href="@{/admin/inquiries/{id}(id=${inquiry.id})}" class="aa-btn aa-view">상세</a></span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Q&A -->
+                <section th:if="${!#lists.isEmpty(qnas)}" class="admin-panel">
+                    <div class="admin-panel-header">
+                        <div>
+                            <h3 class="admin-panel-title">
+                                <i class="bi bi-question-circle me-1"></i>Q&amp;A
+                                <span class="search-count-chip" th:text="${#lists.size(qnas)} + '건'">0건</span>
+                            </h3>
+                            <div class="admin-panel-subtitle">제목이 일치하는 상품 Q&amp;A 게시글입니다.</div>
+                        </div>
+                    </div>
+                    <div class="admin-panel-body">
+                        <div class="table-responsive">
+                            <table class="table admin-console-table align-middle mb-0">
+                                <thead>
+                                <tr>
+                                    <th>제목</th>
+                                    <th class="d-none d-md-table-cell">분류</th>
+                                    <th>작성자</th>
+                                    <th class="text-center">답변</th>
+                                    <th class="text-center d-none d-lg-table-cell">등록일</th>
+                                    <th class="text-center">관리</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="qna : ${qnas}">
+                                    <td class="fw-semibold small text-truncate" style="max-width:260px;" th:text="${qna.title}"></td>
+                                    <td class="d-none d-md-table-cell text-muted small" th:text="${qna.category ?: '-'}"></td>
+                                    <td class="small" th:text="${qna.member != null ? qna.member.name : '비회원'}"></td>
+                                    <td class="text-center">
+                                        <span class="order-status" th:classappend="${qna.answered} ? 'os-green' : 'os-gray'"
+                                              th:text="${qna.answered} ? '답변완료' : '미답변'"></span>
+                                    </td>
+                                    <td class="text-center text-muted small d-none d-lg-table-cell"
+                                        th:text="${#temporals.format(qna.createdAt,'yyyy.MM.dd')}"></td>
+                                    <td class="text-center">
+                                        <span class="admin-actions"><a th:href="@{/admin/qna/{id}(id=${qna.id})}" class="aa-btn aa-view">상세</a></span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 후기 -->
+                <section th:if="${!#lists.isEmpty(reviews)}" class="admin-panel">
+                    <div class="admin-panel-header">
+                        <div>
+                            <h3 class="admin-panel-title">
+                                <i class="bi bi-star me-1"></i>후기
+                                <span class="search-count-chip" th:text="${#lists.size(reviews)} + '건'">0건</span>
+                            </h3>
+                            <div class="admin-panel-subtitle">제목·내용·제품명이 일치하는 구매 후기입니다.</div>
+                        </div>
+                    </div>
+                    <div class="admin-panel-body">
+                        <div class="table-responsive">
+                            <table class="table admin-console-table align-middle mb-0">
+                                <thead>
+                                <tr>
+                                    <th>제목</th>
+                                    <th class="d-none d-md-table-cell">제품</th>
+                                    <th>작성자</th>
+                                    <th class="text-center">공개</th>
+                                    <th class="text-center d-none d-lg-table-cell">등록일</th>
+                                    <th class="text-center">관리</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="review : ${reviews}">
+                                    <td class="fw-semibold small text-truncate" style="max-width:260px;" th:text="${review.title}"></td>
+                                    <td class="d-none d-md-table-cell text-muted small text-truncate" style="max-width:180px;" th:text="${review.productName ?: '-'}"></td>
+                                    <td class="small" th:text="${review.member != null ? review.member.name : '비회원'}"></td>
+                                    <td class="text-center">
+                                        <span class="order-status" th:classappend="${review.visible} ? 'os-green' : 'os-gray'"
+                                              th:text="${review.visible} ? '공개' : '숨김'"></span>
+                                    </td>
+                                    <td class="text-center text-muted small d-none d-lg-table-cell"
+                                        th:text="${#temporals.format(review.createdAt,'yyyy.MM.dd')}"></td>
+                                    <td class="text-center">
+                                        <span class="admin-actions"><a th:href="@{/admin/reviews/{id}(id=${review.id})}" class="aa-btn aa-view">상세</a></span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </th:block>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+</body>
+</html>

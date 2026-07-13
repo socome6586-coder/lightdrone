@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('맞춤결제 수정')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+    <style>
+        .cp-submit-btn, .cp-cancel-btn {
+            border-radius: 8px;
+            padding: 7px 30px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('custom-payments')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('맞춤결제 수정', '결제 링크용 상품 정보를 관리자 콘솔 안에서 수정합니다.')}"></th:block>
+
+        <div class="container" style="max-width:680px;">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" th:action="@{/admin/custom-payments/{id}/edit(id=${customPayment.id})}"
+                          th:object="${customPaymentDto}" enctype="multipart/form-data" class="row g-3">
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">상품명</label>
+                            <input type="text" th:field="*{name}" class="form-control"
+                                   placeholder="예: 고객명 또는 라이트드론">
+                            <div class="form-text">구매자 식별용 이름 또는 기업명을 입력합니다.</div>
+                            <div class="text-danger small" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">맞춤결제 코드</label>
+                            <input type="text" th:field="*{code}" class="form-control" maxlength="4"
+                                   inputmode="numeric" placeholder="예: 1234">
+                            <div class="form-text">구매자 전화번호 앞자리 4자리</div>
+                            <div class="text-danger small" th:if="${#fields.hasErrors('code')}" th:errors="*{code}"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">가격</label>
+                            <input type="text" th:field="*{price}" id="price" class="form-control" inputmode="numeric"
+                                   placeholder="예: 150,000">
+                            <div class="text-danger small" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">배송 방법</label>
+                            <select th:field="*{deliveryMethod}" class="form-select">
+                                <option value="택배">택배</option>
+                                <option value="직접수령">직접수령</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">대표 이미지 <span class="text-muted fw-normal small">(선택)</span></label>
+                            <div class="mb-2">
+                                <img th:src="${customPayment.imageUrlOrDefault}" alt=""
+                                     style="width:96px;height:96px;object-fit:cover;border-radius:8px;border:1px solid #eee;">
+                            </div>
+                            <input type="file" name="imageFile" accept="image/*" class="form-control">
+                            <div class="form-text">비워두면 기존 이미지를 유지합니다.</div>
+                        </div>
+
+                        <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+                            <button type="submit" class="btn btn-primary cp-submit-btn">
+                                <i class="bi bi-check-lg me-1"></i>저장
+                            </button>
+                            <a th:href="@{/admin/custom-payments}" class="btn btn-outline-secondary cp-cancel-btn">취소</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+<script>
+    (function () {
+        var priceEl = document.getElementById('price');
+        if (!priceEl) return;
+        function digits(v) { return (v || '').replace(/[^\d]/g, ''); }
+        function formatPriceField() {
+            var d = digits(priceEl.value);
+            priceEl.value = d ? parseInt(d, 10).toLocaleString('ko-KR') : '';
+        }
+        priceEl.addEventListener('input', formatPriceField);
+        var form = priceEl.closest('form');
+        if (form) form.addEventListener('submit', function () {
+            priceEl.value = digits(priceEl.value);
+        });
+        formatPriceField();
+    })();
+</script>
+</body>
+</html>

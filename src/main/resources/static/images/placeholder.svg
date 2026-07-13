@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+  <rect width="600" height="600" fill="#eef1f5"/>
+  <g fill="none" stroke="#b3bdc9" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="170" y="195" width="260" height="190" rx="14"/>
+    <circle cx="240" cy="252" r="24"/>
+    <path d="M170 350 L250 272 L312 326 L368 284 L430 350"/>
+  </g>
+  <text x="300" y="448" font-family="'Apple SD Gothic Neo','Malgun Gothic',sans-serif" font-size="30" font-weight="600" fill="#9aa7b4" text-anchor="middle">이미지를 등록해주세요</text>
+</svg>

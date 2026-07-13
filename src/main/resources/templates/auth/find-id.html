@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('아이디 찾기')}"></th:block>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<div class="auth-section d-flex align-items-center justify-content-center py-5 bg-light">
+    <div class="auth-card card border-0 shadow-lg p-4" style="width:100%;max-width:480px;">
+
+        <!-- 헤더 -->
+        <div class="text-center mb-4">
+            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                 style="width:56px;height:56px;font-size:1.5rem;">
+                <i class="bi bi-person-check"></i>
+            </div>
+            <h5 class="fw-bold mb-1">아이디 찾기</h5>
+            <p class="text-muted small">가입 시 입력한 정보로 아이디를 찾을 수 있습니다.</p>
+        </div>
+
+        <!-- 결과 표시 -->
+        <div th:if="${found}" class="alert alert-success text-center py-3 mb-4">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            아이디를 찾았습니다.
+            <div class="fw-bold fs-5 mt-2 text-dark" th:text="${maskedUsername}"></div>
+            <div class="mt-3 d-flex gap-2 justify-content-center">
+                <a th:href="@{/auth/login}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>로그인
+                </a>
+                <a th:href="@{/auth/find-password}" class="btn btn-outline-secondary btn-sm">
+                    비밀번호 찾기
+                </a>
+            </div>
+        </div>
+
+        <!-- 오류 메시지 -->
+        <div th:if="${errorMsg}" class="alert alert-danger py-2 small mb-3">
+            <i class="bi bi-exclamation-circle me-1"></i>
+            <span th:text="${errorMsg}"></span>
+        </div>
+
+        <!-- 탭 -->
+        <ul class="nav nav-pills nav-fill mb-4" id="findIdTab">
+            <li class="nav-item">
+                <button class="nav-link"
+                        th:classappend="${method == null or method == 'email'} ? 'active'"
+                        id="tab-email" onclick="switchTab('email')">
+                    <i class="bi bi-envelope me-1"></i>이메일로 찾기
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link"
+                        th:classappend="${method == 'phone'} ? 'active'"
+                        id="tab-phone" onclick="switchTab('phone')">
+                    <i class="bi bi-phone me-1"></i>휴대폰으로 찾기
+                </button>
+            </li>
+        </ul>
+
+        <!-- 이메일로 찾기 폼 -->
+        <form id="form-email"
+              th:style="${method == 'phone'} ? 'display:none;' : ''"
+              th:action="@{/auth/find-id}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" name="method" value="email">
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">이름</label>
+                <input type="text" name="name" class="form-control"
+                       th:value="${method != 'phone' ? name : ''}"
+                       placeholder="가입 시 입력한 이름" required>
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-semibold">이메일</label>
+                <input type="email" name="email" class="form-control"
+                       th:value="${method != 'phone' ? email : ''}"
+                       placeholder="가입 시 입력한 이메일" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg">
+                <i class="bi bi-search me-2"></i>아이디 찾기
+            </button>
+        </form>
+
+        <!-- 휴대폰으로 찾기 폼 -->
+        <form id="form-phone"
+              th:style="${method == 'phone'} ? '' : 'display:none;'"
+              th:action="@{/auth/find-id}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" name="method" value="phone">
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">이름</label>
+                <input type="text" name="name" class="form-control"
+                       th:value="${method == 'phone' ? name : ''}"
+                       placeholder="가입 시 입력한 이름" required>
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-semibold">휴대전화번호</label>
+                <input type="tel" name="phone" class="form-control phone-input"
+                       th:value="${method == 'phone' ? phone : ''}"
+                       placeholder="010-0000-0000"
+                       inputmode="numeric" maxlength="13" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg">
+                <i class="bi bi-search me-2"></i>아이디 찾기
+            </button>
+        </form>
+
+        <hr class="my-4">
+        <div class="d-flex justify-content-center gap-3 small">
+            <a th:href="@{/auth/login}" class="text-muted text-decoration-none">
+                <i class="bi bi-box-arrow-in-right me-1"></i>로그인
+            </a>
+            <span class="text-muted">|</span>
+            <a th:href="@{/auth/find-password}" class="text-muted text-decoration-none">
+                <i class="bi bi-key me-1"></i>비밀번호 찾기
+            </a>
+            <span class="text-muted">|</span>
+            <a th:href="@{/auth/signup}" class="text-muted text-decoration-none">
+                <i class="bi bi-person-plus me-1"></i>회원가입
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function switchTab(tab) {
+    document.getElementById('form-email').style.display = tab === 'email' ? '' : 'none';
+    document.getElementById('form-phone').style.display = tab === 'phone' ? '' : 'none';
+    document.getElementById('tab-email').classList.toggle('active', tab === 'email');
+    document.getElementById('tab-phone').classList.toggle('active', tab === 'phone');
+}
+
+</script>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

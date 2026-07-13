@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('QnA 게시판')}"></th:block>
+    <style>
+        /* QnA 게시판 — 심플 테이블 보드 */
+        .board-wrap { max-width: 100%; margin: 0 auto; }
+        .board-table { width: 100%; border-collapse: collapse; }
+        .board-table thead th {
+            font-size: .82rem; font-weight: 600; color: #6b7280;
+            text-align: center; padding: 12px 10px;
+            background: #f8fafc;
+            border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+        .board-table thead th:first-child { border-top-left-radius: 6px; }
+        .board-table thead th:last-child { border-top-right-radius: 6px; }
+        .board-table tbody td {
+            padding: 13px 10px; font-size: .9rem; color: #555;
+            text-align: center; border-bottom: 1px solid #f1f3f6;
+            vertical-align: middle;
+        }
+        .board-table tbody tr:hover { background: #f8faff; }
+        .board-table .col-no    { width: 64px; }
+        .board-table .col-writer{ width: 130px; }
+        .board-table .col-date  { width: 120px; }
+        .board-table .col-views { width: 80px; }
+        .board-table .col-state { width: 90px; }
+        .board-table td.col-title { text-align: left; }
+        .board-title-link {
+            color: #222; text-decoration: none; font-weight: 500;
+        }
+        .board-title-link:hover { color: #1a4fd8; text-decoration: underline; }
+        .board-cat { color: #1a4fd8; font-weight: 600; margin-right: 6px; }
+        .board-views { color: #1a4fd8; }
+        .board-empty { text-align: center; padding: 80px 0; color: #9aa3af; }
+
+        /* 상태 표시 — 점 + 텍스트 (세련/깔끔) */
+        .qna-state { display: inline-flex; align-items: center; gap: 5px; font-size: .8rem; font-weight: 600; }
+        .qna-state::before { content: ''; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .qna-state.done { color: #0d9488; }
+        .qna-state.done::before { background: #0d9488; }
+        .qna-state.wait { color: #64748b; }
+        .qna-state.wait::before { background: #94a3b8; }
+
+        /* 하단 검색 + 글쓰기 */
+        .board-bottom { position: relative; margin-top: 28px; min-height: 44px; }
+        .board-search { max-width: 280px; margin: 0 auto; }
+        .board-search .form-control { border-radius: 4px; padding-right: 38px; }
+        .board-search .search-btn {
+            position: absolute; top: 0; right: 0; height: 100%;
+            border: none; background: transparent; color: #888;
+            padding: 0 12px; cursor: pointer;
+        }
+        .board-write-btn {
+            position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+            border-radius: 4px; padding: .45rem 1.3rem; font-weight: 500;
+        }
+        /* 상단 배너 */
+        .board-banner { margin-bottom: 24px; }
+        .board-banner img { display: block; border-radius: 10px; }
+        /* 카테고리 필터 */
+        .board-filter { gap: 6px; margin-bottom: 18px; }
+        .board-filter .btn {
+            padding: 5px 14px; font-size: .82rem; font-weight: 500; border-radius: 4px;
+        }
+        .board-filter .btn-outline-secondary { color: #6b7280; border-color: #e3e7ee; background: #fff; }
+        .board-filter .btn-outline-secondary:hover { color: #1040bc; border-color: #c3d0f0; background: #f5f8ff; }
+
+        @media (max-width: 767.98px) {
+            /* 상단 배너 이미지 숨김 */
+            .board-banner { display: none; }
+
+            /* 테이블 컴팩트화 + 글쓴이·작성시간 숨김 */
+            .board-table .col-writer,
+            .board-table .col-date { display: none; }
+            .board-table thead th,
+            .board-table tbody td { padding: 11px 6px; font-size: .82rem; }
+            .board-table .col-no    { width: 38px; }
+            .board-table .col-views { width: 52px; }
+            .board-table .col-state { width: 70px; }
+            .board-table td.col-title {
+                font-size: .88rem; line-height: 1.4; word-break: break-word;
+            }
+            .board-cat { display: block; margin: 0 0 2px; font-size: .76rem; }
+
+            /* 하단 검색 + 글쓰기: 가로 겹침 대신 세로로 정렬 */
+            .board-bottom { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+            .board-search { max-width: 100%; }
+            .board-write-btn {
+                position: static; transform: none;
+                width: 100%; padding: .6rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<section class="content-page">
+    <div class="container">
+
+        <div class="board-banner">
+            <img th:src="@{/images/Qna.png}" alt="Q&amp;A" class="img-fluid w-100">
+        </div>
+
+        <div class="board-wrap">
+
+            <!-- 카테고리 필터 -->
+            <div class="board-filter d-flex flex-wrap">
+                <a th:href="@{/qna(keyword=${keyword})}"
+                   th:classappend="${selectedCategory == null ? 'btn-primary' : 'btn-outline-secondary'}"
+                   class="btn btn-sm">전체</a>
+                <a th:each="cat : ${qnaCategories}"
+                   th:href="@{/qna(category=${cat}, keyword=${keyword})}"
+                   th:classappend="${cat == selectedCategory ? 'btn-primary' : 'btn-outline-secondary'}"
+                   th:text="${cat}"
+                   class="btn btn-sm">카테고리</a>
+            </div>
+
+            <!-- 목록 테이블 -->
+            <table class="board-table">
+                <thead>
+                    <tr>
+                        <th class="col-no">No</th>
+                        <th>제목</th>
+                        <th class="col-writer">글쓴이</th>
+                        <th class="col-date">작성시간</th>
+                        <th class="col-views">조회수</th>
+                        <th class="col-state">상태</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 빈 상태 -->
+                    <tr th:if="${#lists.isEmpty(qnaList.content)}">
+                        <td colspan="6" class="board-empty">
+                            <i class="bi bi-chat-dots d-block mb-2" style="font-size:2rem;"></i>
+                            등록된 질문이 없습니다.
+                        </td>
+                    </tr>
+
+                    <!-- 질문 행 -->
+                    <tr th:each="qna, qnaStat : ${qnaList.content}">
+                        <td class="col-no"
+                            th:text="${qnaList.totalElements - (qnaList.number * qnaList.size) - qnaStat.index}">1</td>
+                        <td class="col-title">
+                            <span th:if="${qna.category != null and qna.category != '기타'}"
+                                  class="board-cat" th:text="'[' + ${qna.category} + ']'"></span>
+                            <i th:if="${qna.secret}" class="bi bi-lock-fill text-secondary small me-1"></i>
+                            <a th:href="@{/qna/{id}(id=${qna.id})}"
+                               class="board-title-link" th:text="${qna.title}">제목</a>
+                        </td>
+                        <td class="col-writer" th:text="${qna.member != null ? qna.member.name : '-'}">글쓴이</td>
+                        <td class="col-date" th:text="${#temporals.format(qna.createdAt, 'yyyy-MM-dd')}">2024-01-01</td>
+                        <td class="col-views board-views" th:text="${qna.viewCount}">0</td>
+                        <td class="col-state">
+                            <span th:if="${qna.answered}" class="qna-state done">답변완료</span>
+                            <span th:unless="${qna.answered}" class="qna-state wait">답변대기</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 하단: 검색(가운데) + 글쓰기(오른쪽) -->
+            <div class="board-bottom">
+                <form th:action="@{/qna}" method="get" class="board-search position-relative">
+                    <input type="hidden" name="category" th:if="${selectedCategory != null}" th:value="${selectedCategory}">
+                    <input type="text" name="keyword" class="form-control"
+                           placeholder="Search" th:value="${keyword}">
+                    <button type="submit" class="search-btn">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </form>
+                <a th:if="${member != null}" th:href="@{/qna/write}"
+                   class="btn btn-outline-primary board-write-btn">글쓰기</a>
+                <a th:if="${member == null}" th:href="@{/auth/login}"
+                   class="btn btn-outline-primary board-write-btn">글쓰기</a>
+            </div>
+
+            <!-- 페이지네이션 -->
+            <nav th:if="${qnaList.totalPages > 1}" class="mt-4"
+                 th:with="startPage=${qnaList.number > 2 ? qnaList.number - 2 : 0},
+                          endPage=${qnaList.number + 2 < qnaList.totalPages - 1 ? qnaList.number + 2 : qnaList.totalPages - 1}">
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    <li class="page-item" th:classappend="${qnaList.first ? 'disabled' : ''}">
+                        <a class="page-link"
+                           th:href="@{/qna(page=0, category=${selectedCategory}, keyword=${keyword})}" title="처음">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item" th:classappend="${qnaList.first ? 'disabled' : ''}">
+                        <a class="page-link"
+                           th:href="@{/qna(page=${qnaList.number - 1}, category=${selectedCategory}, keyword=${keyword})}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item disabled" th:if="${startPage > 0}"><span class="page-link">…</span></li>
+                    <li class="page-item"
+                        th:each="i : ${#numbers.sequence(startPage, endPage)}"
+                        th:classappend="${i == qnaList.number ? 'active' : ''}">
+                        <a class="page-link"
+                           th:href="@{/qna(page=${i}, category=${selectedCategory}, keyword=${keyword})}"
+                           th:text="${i + 1}">1</a>
+                    </li>
+                    <li class="page-item disabled" th:if="${endPage < qnaList.totalPages - 1}"><span class="page-link">…</span></li>
+                    <li class="page-item" th:classappend="${qnaList.last ? 'disabled' : ''}">
+                        <a class="page-link"
+                           th:href="@{/qna(page=${qnaList.number + 1}, category=${selectedCategory}, keyword=${keyword})}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item" th:classappend="${qnaList.last ? 'disabled' : ''}">
+                        <a class="page-link"
+                           th:href="@{/qna(page=${qnaList.totalPages - 1}, category=${selectedCategory}, keyword=${keyword})}" title="마지막">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+        </div>
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

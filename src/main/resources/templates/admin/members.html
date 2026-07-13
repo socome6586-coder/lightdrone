@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('회원 관리')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+    <style>
+        /* 권한/등급 - 부드러운 톤 태그 */
+        .tag-soft {
+            display: inline-block;
+            padding: 3px 11px;
+            border-radius: 7px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+        }
+        .tag-role-admin { background: rgba(220, 38, 38, 0.12); color: #dc2626; }
+        .tag-role-user  { background: rgba(100, 116, 139, 0.12); color: #475569; }
+        .tag-grade      { background: rgba(37, 99, 235, 0.12); color: #2563eb; }
+
+        /* 상태 - 박스 대신 점 + 텍스트 */
+        .status-dot {
+            font-size: 0.82rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .status-dot::before {
+            content: "";
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: 1px;
+            background: currentColor;
+        }
+        .status-on  { color: #16a34a; }
+        .status-off { color: #94a3b8; }
+    </style>
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('members')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('회원 관리', '회원 계정, 권한, 사업자 등급과 상태를 한 화면에서 관리합니다.')}"></th:block>
+
+        <div class="admin-section-grid">
+            <div th:if="${successMsg}" class="alert alert-success"><i class="bi bi-check-circle me-2"></i><span th:text="${successMsg}"></span></div>
+            <div th:if="${errorMsg}" class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i><span th:text="${errorMsg}"></span></div>
+
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">사업자 회원 등급 할인 정책</h3>
+                        <div class="admin-panel-subtitle">사업자 회원에게 자동 적용되는 기본 할인율을 설정합니다.</div>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <form th:action="@{/admin/member-grades/policy}" method="post" class="admin-form-card">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-12 col-md-3">
+                                <label class="form-label fw-semibold mb-1">도매 할인율</label>
+                                <div class="input-group">
+                                    <input type="number" name="wholesalePercent" min="0" max="100" class="form-control"
+                                           th:value="${gradePolicy.wholesalePercent}" required>
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label fw-semibold mb-1">도도매 할인율</label>
+                                <div class="input-group">
+                                    <input type="number" name="superWholesalePercent" min="0" max="100" class="form-control"
+                                           th:value="${gradePolicy.superWholesalePercent}" required>
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <button type="submit" class="btn btn-primary px-4">
+                                    <i class="bi bi-save me-1"></i>정책 저장
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">전체 회원 목록</h3>
+                        <div class="admin-panel-subtitle">총 <span th:text="${#lists.size(members)}">0</span>명의 회원이 등록되어 있습니다.</div>
+                    </div>
+                    <a th:href="@{/admin/export/members.csv}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-filetype-csv me-1"></i>엑셀 내보내기
+                    </a>
+                </div>
+                <div class="admin-panel-body">
+                    <div class="table-responsive">
+                        <table class="table admin-console-table align-middle mb-0" style="table-layout:fixed; width:100%;">
+                            <colgroup>
+                                <col style="width:5%;">
+                                <col style="width:12%;">
+                                <col style="width:10%;">
+                                <col style="width:18%;">
+                                <col style="width:13%;">
+                                <col style="width:8%;">
+                                <col style="width:10%;">
+                                <col style="width:8%;">
+                                <col style="width:10%;">
+                                <col style="width:16%;">
+                            </colgroup>
+                            <thead>
+                            <tr>
+                                <th class="text-center">번호</th>
+                                <th>아이디</th>
+                                <th>이름</th>
+                                <th class="d-none d-md-table-cell">이메일</th>
+                                <th class="d-none d-md-table-cell">연락처</th>
+                                <th class="text-center">권한</th>
+                                <th class="text-center">등급</th>
+                                <th class="text-center">상태</th>
+                                <th class="text-center d-none d-lg-table-cell">가입일</th>
+                                <th class="text-center">관리</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="member, stat : ${members}">
+                                <td class="text-center text-muted small" th:text="${stat.count}"></td>
+                                <td class="fw-semibold small" th:text="${member.username}"></td>
+                                <td class="small" th:text="${member.name}"></td>
+                                <td class="d-none d-md-table-cell text-muted small text-truncate" th:text="${member.email}"></td>
+                                <td class="d-none d-md-table-cell text-muted small" th:text="${member.phone ?: '-'}"></td>
+                                <td class="text-center">
+                                    <span class="tag-soft" th:classappend="${member.role.name() == 'ADMIN'} ? 'tag-role-admin' : 'tag-role-user'"
+                                          th:text="${member.role.name() == 'ADMIN'} ? '관리자' : '일반'"></span>
+                                </td>
+                                <td class="text-center">
+                                    <span th:if="${member.businessGrade != null and member.businessGrade.business}" class="tag-soft tag-grade"
+                                          th:text="${member.businessGrade.label}">도매</span>
+                                    <span th:unless="${member.businessGrade != null and member.businessGrade.business}" class="text-muted small">-</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="status-dot" th:classappend="${member.enabled} ? 'status-on' : 'status-off'"
+                                          th:text="${member.enabled} ? '활성' : '비활성'"></span>
+                                </td>
+                                <td class="text-center text-muted small d-none d-lg-table-cell"
+                                    th:text="${#temporals.format(member.createdAt,'yyyy.MM.dd')}"></td>
+                                <td class="text-center">
+                                    <div class="admin-actions">
+                                        <a th:href="@{/admin/members/{id}/edit(id=${member.id})}" class="aa-btn aa-edit">수정</a>
+                                        <span class="aa-sep" aria-hidden="true" th:if="${member.role.name() != 'ADMIN'}">|</span>
+                                        <form th:if="${member.role.name() != 'ADMIN'}"
+                                              th:action="@{/admin/members/{id}/delete(id=${member.id})}"
+                                              method="post"
+                                              onsubmit="return confirm('이 회원 계정을 삭제하시겠습니까? 삭제 후 복구할 수 없습니다.')">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                            <button type="submit" class="aa-btn aa-del">삭제</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(members)}">
+                                <td colspan="10" class="text-center text-muted py-4">등록된 회원이 없습니다.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('팝업 관리')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+    <style>
+        .popup-thumb {
+            border: 1px solid #dee6fb; border-radius: 16px; overflow: hidden;
+            height: 170px; background: #f4f6fd;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .popup-thumb img { width: 100%; height: 100%; object-fit: contain; }
+        .popup-status {
+            display: inline-block; font-size: 0.74rem; font-weight: 800;
+            padding: 3px 10px; border-radius: 999px;
+        }
+        .popup-status.on  { background: rgba(46, 160, 67, 0.13); color: #1a7f37; }
+        .popup-status.off { background: rgba(120, 120, 120, 0.12); color: #6b7280; }
+    </style>
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('popups')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('팝업 관리', '메인 화면에 노출되는 공지·이벤트 팝업을 등록하고 노출 기간을 관리합니다.')}"></th:block>
+
+        <div class="admin-section-grid">
+            <div th:if="${successMsg}" class="alert alert-success mb-0"><span th:text="${successMsg}"></span></div>
+            <div th:if="${errorMsg}" class="alert alert-danger mb-0"><span th:text="${errorMsg}"></span></div>
+
+            <!-- ── 신규 등록 ───────────────────────────────── -->
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">새 팝업 등록</h3>
+                        <div class="admin-panel-subtitle">이미지를 올리고 노출 기간·링크를 지정하면 메인 화면에 즉시 반영됩니다.</div>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <form th:action="@{/admin/popups/save}" method="post" enctype="multipart/form-data">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">관리 제목 <span class="text-danger">*</span></label>
+                                <input type="text" name="title" class="form-control" required
+                                       placeholder="예: 6월 여름 세일 안내">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">팝업 이미지 <span class="text-danger">*</span></label>
+                                <input type="file" name="imageFile" class="form-control" required
+                                       accept="image/jpeg,image/png,image/gif,image/webp">
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label fw-semibold">클릭 링크 URL</label>
+                                <input type="text" name="linkUrl" class="form-control"
+                                       placeholder="/products/123 또는 https://... (비우면 링크 없음)">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">가로 폭(px)</label>
+                                <input type="number" name="width" class="form-control" value="420" min="200" max="900">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">정렬 순서</label>
+                                <input type="number" name="sortOrder" class="form-control" value="0">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">노출 시작</label>
+                                <input type="datetime-local" name="startAt" class="form-control">
+                                <div class="form-text">비우면 즉시 노출</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">노출 종료</label>
+                                <input type="datetime-local" name="endAt" class="form-control">
+                                <div class="form-text">비우면 무기한</div>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end gap-4 pb-1">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="active" value="true" id="newActive" checked>
+                                    <label class="form-check-label fw-semibold" for="newActive">노출함</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="newTab" value="true" id="newTab" checked>
+                                    <label class="form-check-label fw-semibold" for="newTab">새 탭 열기</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-plus-lg me-1"></i>팝업 등록
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- ── 등록된 팝업 목록 ───────────────────────── -->
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">등록된 팝업</h3>
+                        <div class="admin-panel-subtitle">총 <span th:text="${#lists.size(popups)}">0</span>건</div>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <div th:if="${#lists.isEmpty(popups)}" class="admin-empty my-3">
+                        <i class="bi bi-window-stack fs-3 d-block mb-2"></i>
+                        등록된 팝업이 없습니다.
+                    </div>
+
+                    <div class="admin-section-grid">
+                        <section class="admin-panel" th:each="popup : ${popups}">
+                            <div class="admin-panel-header">
+                                <div>
+                                    <h4 class="admin-panel-title mb-1" th:text="${popup.title}">팝업 제목</h4>
+                                    <span class="popup-status" th:classappend="${popup.active} ? ' on' : ' off'"
+                                          th:text="${popup.active} ? '노출중' : '숨김'">노출중</span>
+                                </div>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <form th:action="@{/admin/popups/{id}/toggle(id=${popup.id})}" method="post" class="d-inline">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm"
+                                                th:text="${popup.active} ? '숨기기' : '노출하기'">숨기기</button>
+                                    </form>
+                                    <span class="admin-actions">
+                                        <form th:action="@{/admin/popups/{id}/delete(id=${popup.id})}" method="post"
+                                              onsubmit="return confirm('이 팝업을 삭제할까요? 되돌릴 수 없습니다.');">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                            <button type="submit" class="aa-btn aa-del">삭제</button>
+                                        </form>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="admin-panel-body">
+                                <div class="row g-4 align-items-start">
+                                    <div class="col-md-3">
+                                        <div class="small fw-semibold text-muted mb-2">현재 이미지</div>
+                                        <div class="popup-thumb">
+                                            <img th:if="${popup.imageUrl != null and !#strings.isEmpty(popup.imageUrl)}"
+                                                 th:src="${popup.imageUrl}" alt="팝업 이미지">
+                                            <span th:unless="${popup.imageUrl != null and !#strings.isEmpty(popup.imageUrl)}"
+                                                  class="text-muted small">이미지 없음</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <form th:action="@{/admin/popups/{id}(id=${popup.id})}" method="post" enctype="multipart/form-data">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">관리 제목</label>
+                                                    <input type="text" name="title" class="form-control" th:value="${popup.title}" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">이미지 교체</label>
+                                                    <input type="file" name="imageFile" class="form-control"
+                                                           accept="image/jpeg,image/png,image/gif,image/webp">
+                                                    <div class="form-text">비우면 기존 이미지 유지</div>
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <label class="form-label fw-semibold">클릭 링크 URL</label>
+                                                    <input type="text" name="linkUrl" class="form-control" th:value="${popup.linkUrl}"
+                                                           placeholder="/products/123 또는 https://...">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label fw-semibold">가로 폭(px)</label>
+                                                    <input type="number" name="width" class="form-control" th:value="${popup.width}" min="200" max="900">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label fw-semibold">정렬 순서</label>
+                                                    <input type="number" name="sortOrder" class="form-control" th:value="${popup.sortOrder}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold">노출 시작</label>
+                                                    <input type="datetime-local" name="startAt" class="form-control"
+                                                           th:value="${popup.startAt != null ? #temporals.format(popup.startAt, 'yyyy-MM-dd''T''HH:mm') : ''}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold">노출 종료</label>
+                                                    <input type="datetime-local" name="endAt" class="form-control"
+                                                           th:value="${popup.endAt != null ? #temporals.format(popup.endAt, 'yyyy-MM-dd''T''HH:mm') : ''}">
+                                                </div>
+                                                <div class="col-md-4 d-flex align-items-end gap-4 pb-1">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="active" value="true"
+                                                               th:id="'active' + ${popup.id}" th:checked="${popup.active}">
+                                                        <label class="form-check-label fw-semibold" th:for="'active' + ${popup.id}">노출함</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="newTab" value="true"
+                                                               th:id="'newTab' + ${popup.id}" th:checked="${popup.newTab}">
+                                                        <label class="form-check-label fw-semibold" th:for="'newTab' + ${popup.id}">새 탭 열기</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <button type="submit" class="btn btn-primary">저장</button>
+                                                    <a th:href="@{/}" target="_blank" class="btn btn-outline-secondary ms-2">메인 미리보기</a>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+<script>
+    /* 팝업 이미지 선택 시 미리보기 + 용량(10MB) 초과 사전 경고 */
+    (function () {
+        var MAX_BYTES = 10 * 1024 * 1024;
+        document.querySelectorAll('input[type="file"][name="imageFile"]').forEach(function (input) {
+            input.addEventListener('change', function () {
+                var wrap = input.parentElement;
+                var preview = wrap.querySelector('.popup-image-preview');
+                var notice = wrap.querySelector('.popup-image-notice');
+                var file = input.files && input.files[0];
+
+                if (notice) { notice.remove(); }
+                if (!file) { if (preview) preview.remove(); return; }
+
+                if (file.size > MAX_BYTES) {
+                    if (preview) preview.remove();
+                    input.value = '';
+                    var warn = document.createElement('div');
+                    warn.className = 'popup-image-notice form-text text-danger fw-semibold';
+                    warn.textContent = '파일 용량이 10MB를 초과했습니다. 더 작은 이미지를 선택해 주세요.';
+                    wrap.appendChild(warn);
+                    return;
+                }
+                if (!file.type.startsWith('image/')) { if (preview) preview.remove(); return; }
+
+                if (!preview) {
+                    preview = document.createElement('img');
+                    preview.className = 'popup-image-preview img-fluid rounded border mt-2 d-block';
+                    preview.style.maxHeight = '160px';
+                    wrap.appendChild(preview);
+                }
+                preview.src = URL.createObjectURL(file);
+            });
+        });
+    })();
+</script>
+</body>
+</html>

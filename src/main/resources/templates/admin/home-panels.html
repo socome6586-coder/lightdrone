@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('메인 패널 관리')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('home-panels')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('메인 패널 관리', '메인 배너와 연결 링크를 슬롯별로 관리합니다.')}"></th:block>
+
+        <div class="admin-section-grid">
+            <div th:if="${successMsg}" class="alert alert-success mb-0"><span th:text="${successMsg}"></span></div>
+            <div th:if="${errorMsg}" class="alert alert-danger mb-0"><span th:text="${errorMsg}"></span></div>
+
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">메인 동영상</h3>
+                        <div class="admin-panel-subtitle">동영상 URL을 입력하면 메인 화면(빠른메뉴 아래)에 자동 재생 영상이 노출됩니다.</div>
+                    </div>
+                    <a th:href="@{/}" target="_blank" class="btn btn-outline-secondary">미리보기</a>
+                </div>
+                <div class="admin-panel-body">
+                    <form th:action="@{/admin/home-panels/video}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-semibold">동영상 URL</label>
+                                <input type="text" name="linkUrl" class="form-control"
+                                       th:value="${videoPanel.linkUrl}"
+                                       placeholder="YouTube / Vimeo 링크 또는 .mp4 직접 링크">
+                                <div class="form-text">
+                                    YouTube·Vimeo 주소를 붙여넣으면 자동으로 음소거·반복 재생됩니다. mp4/webm 직링크도 가능합니다.
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">제목(선택)</label>
+                                <input type="text" name="label" class="form-control"
+                                       th:value="${videoPanel.label}" placeholder="예: 제품 소개 영상">
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox"
+                                           name="visible" value="true" id="video-visible"
+                                           th:checked="${videoPanel.visible}">
+                                    <label class="form-check-label fw-semibold" for="video-visible">메인 동영상 노출</label>
+                                </div>
+                                <div class="form-text">체크 해제 시 동영상 섹션이 숨겨집니다. (URL이 비어 있어도 자동 제외)</div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">저장</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">메인 슬라이드 슬롯</h3>
+                        <div class="admin-panel-subtitle">이미지, 링크, 제목, 설명을 각각의 배너 위치에 맞춰 수정합니다.</div>
+                    </div>
+                </div>
+
+                <div class="admin-panel-body">
+                    <div class="admin-section-grid">
+                        <section class="admin-panel" th:each="panel : ${panels}">
+                            <div class="admin-panel-header">
+                                <div>
+                                    <h4 class="admin-panel-title">
+                                        <span th:switch="${panel.slot}">
+                                            <span th:case="'LEFT'">배너 슬라이드 1</span>
+                                            <span th:case="'CENTER_1'">배너 슬라이드 2</span>
+                                            <span th:case="'CENTER_2'">배너 슬라이드 3</span>
+                                            <span th:case="'CENTER_3'">배너 슬라이드 4</span>
+                                            <span th:case="'RIGHT'">배너 슬라이드 5</span>
+                                            <span th:case="'SLIDE_6'">배너 슬라이드 6</span>
+                                            <span th:case="*" th:text="${panel.slot}"></span>
+                                        </span>
+                                    </h4>
+                                    <div class="admin-panel-subtitle" th:text="${panel.slot}">LEFT</div>
+                                </div>
+                                <a th:href="@{/}" target="_blank" class="btn btn-outline-secondary">미리보기</a>
+                            </div>
+
+                            <div class="admin-panel-body">
+                                <div class="row g-4 align-items-start">
+                                    <div class="col-md-3 text-center">
+                                        <div class="small fw-semibold text-muted mb-2">현재 이미지</div>
+                                        <div th:if="${panel.imageUrl != null and !#strings.isEmpty(panel.imageUrl)}"
+                                             style="border:1px solid #dee6fb; border-radius:18px; overflow:hidden; height:180px;">
+                                            <img th:src="${panel.imageUrl}" alt="현재 이미지"
+                                                 style="width:100%; height:100%; object-fit:cover;">
+                                        </div>
+                                        <div th:unless="${panel.imageUrl != null and !#strings.isEmpty(panel.imageUrl)}"
+                                             class="admin-empty h-100 d-flex align-items-center justify-content-center">
+                                            이미지 없음
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-9">
+                                        <form th:action="@{/admin/home-panels/{slot}(slot=${panel.slot})}"
+                                              method="post" enctype="multipart/form-data">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                            <div class="row g-3">
+                                                <div class="col-12">
+                                                    <label class="form-label fw-semibold">새 이미지 업로드</label>
+                                                    <input type="file" name="imageFile" class="form-control"
+                                                           accept="image/jpeg,image/png,image/gif,image/webp">
+                                                    <div class="form-text">비워두면 기존 이미지를 유지합니다.</div>
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <label class="form-label fw-semibold">클릭 링크 URL</label>
+                                                    <input type="text" name="linkUrl" class="form-control"
+                                                           th:value="${panel.linkUrl}" placeholder="/products/123 또는 https://...">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold">캡션</label>
+                                                    <input type="text" name="label" class="form-control"
+                                                           th:value="${panel.label}" placeholder="예: Z80">
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label fw-semibold">설명</label>
+                                                    <textarea name="description" class="form-control" rows="2"
+                                                              th:text="${panel.description}"
+                                                              placeholder="메인 화면에 노출할 짧은 설명을 입력하세요"></textarea>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox"
+                                                               name="visible" value="true"
+                                                               th:id="'visible-' + ${panel.slot}"
+                                                               th:checked="${panel.visible}">
+                                                        <label class="form-check-label fw-semibold"
+                                                               th:for="'visible-' + ${panel.slot}">
+                                                            메인 슬라이드 노출
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-text">체크 해제 시 이 슬롯은 슬라이드에서 숨겨집니다. (이미지가 없는 슬롯도 자동 제외)</div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <button type="submit" class="btn btn-primary">저장</button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('장바구니')}"></th:block>
+    <style>
+        .cart-grade-discount {
+            color: #dc2626;
+            font-size: 1.05rem;
+            font-weight: 400;
+            letter-spacing: -.02em;
+            line-height: 1;
+        }
+
+        .cart-qty-group {
+            width: 120px;
+        }
+
+        .cart-delete-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* 모바일: 장바구니 행이 가로로 넘쳐 스크롤 생기던 문제 → 줄바꿈으로 정리 */
+        @media (max-width: 575.98px) {
+            .cart-item-row.px-4 {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+            .cart-item-row > .d-flex {
+                flex-wrap: wrap;
+                row-gap: 12px;
+            }
+            .cart-item-row .flex-grow-1 {
+                flex: 1 1 0;
+                min-width: 0;
+            }
+            .cart-item-row .flex-grow-1 h6 a {
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+            /* 수량 조절은 왼쪽, 소계+삭제는 오른쪽으로 둘째 줄에 배치 */
+            .cart-item-row > .d-flex > .flex-shrink-0.text-end {
+                margin-left: auto;
+                min-width: 0 !important;
+            }
+        }
+        @media (max-width: 575.98px) {
+            .cart-item-row > .d-flex.cart-item-main {
+                display: grid !important;
+                grid-template-columns: 74px minmax(0, 1fr) auto;
+                grid-template-areas:
+                    "media info side"
+                    "media qty side";
+                align-items: start;
+                column-gap: 12px;
+                row-gap: 10px;
+            }
+
+            .cart-item-row .cart-item-media { grid-area: media; }
+
+            .cart-item-row .cart-item-info {
+                grid-area: info;
+                min-width: 0;
+            }
+
+            .cart-item-row .cart-item-info h6 a {
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+
+            .cart-item-row .cart-item-qty {
+                grid-area: qty;
+                min-width: 0;
+            }
+
+            .cart-item-row .cart-item-side {
+                grid-area: side;
+                min-width: 72px !important;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                justify-content: space-between;
+                gap: 10px;
+            }
+
+            .cart-qty-group { width: 100px !important; }
+
+            .cart-item-row .qty-input {
+                padding-left: .25rem;
+                padding-right: .25rem;
+                font-size: .9rem;
+            }
+
+            .cart-item-row .item-subtotal {
+                font-size: 1rem;
+                line-height: 1.2;
+                margin-bottom: 0 !important;
+            }
+
+            .cart-grade-discount {
+                display: inline-block;
+                margin-top: 4px;
+                font-size: .96rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<div class="page-header">
+    <div class="page-header-overlay"></div>
+    <div class="container text-center text-white position-relative">
+        <h1 class="display-5 fw-bold">장바구니</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center">
+                <li class="breadcrumb-item"><a th:href="@{/}" class="text-white-50">홈</a></li>
+                <li class="breadcrumb-item active text-white">장바구니</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section-padding">
+    <div class="container">
+        <div class="row g-4">
+
+            <!-- 사이드바 -->
+            <th:block th:replace="~{layout/fragments :: mypageSidebar('cart')}"></th:block>
+
+            <!-- 장바구니 메인 영역 -->
+            <div class="col-md-9">
+
+                <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show">
+                    <i class="bi bi-check-circle me-2"></i><span th:text="${successMsg}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <!-- 장바구니가 비어있을 때 -->
+                <div th:if="${#lists.isEmpty(cartItems)}" class="text-center py-5">
+                    <i class="bi bi-cart-x text-muted" style="font-size:5rem;"></i>
+                    <h4 class="mt-4 text-muted">장바구니가 비어있습니다.</h4>
+                    <p class="text-muted">원하시는 드론을 담아보세요!</p>
+                    <a th:href="@{/}" class="btn btn-primary mt-2">
+                        <i class="bi bi-arrow-left me-1"></i>쇼핑 계속하기
+                    </a>
+                </div>
+
+                <!-- 장바구니 목록 -->
+                <div th:if="${!#lists.isEmpty(cartItems)}">
+                    <!-- 사업자 회원 등급 할인 안내 -->
+                    <div th:if="${gradeDiscountPercent != null and gradeDiscountPercent > 0}"
+                         class="alert alert-primary d-flex align-items-center mb-4">
+                        <i class="bi bi-percent me-2"></i>
+                        <span>
+                            <strong th:text="${member.businessGrade.label}">도매</strong> 등급 회원님께
+                            상시 <strong th:text="${gradeDiscountPercent} + '%'">20%</strong> 할인이 적용된 금액입니다.
+                        </span>
+                    </div>
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white fw-bold border-bottom">
+                            <i class="bi bi-cart3 me-2 text-primary"></i>
+                            담은 상품 <span class="badge bg-primary ms-1" th:text="${#lists.size(cartItems)}"></span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div th:each="item : ${cartItems}" class="cart-item-row px-4"
+                                 th:with="origUnit=${item.product.effectivePrice + (item.selectedOptionExtraPrice != null ? item.selectedOptionExtraPrice : 0)},
+                                          unitPrice=${@cartService.discountedUnitPrice(item, member)}"
+                                 th:attr="data-price=${unitPrice}, data-max=${item.product.stock}">
+                                <div class="d-flex align-items-center gap-3 cart-item-main">
+                                    <!-- 상품 이미지 -->
+                                    <div class="flex-shrink-0 cart-item-media">
+                                        <div class="rounded bg-light d-flex align-items-center justify-content-center"
+                                             style="width:80px;height:80px;overflow:hidden;">
+                                            <img th:if="${item.product.imageUrl != null}"
+                                                 th:src="${item.product.imageUrl}"
+                                                 th:alt="${item.product.name}"
+                                                 style="width:100%;height:100%;object-fit:cover;"
+                                                 onerror="this.parentElement.innerHTML='<i class=\'bi bi-drone text-muted\' style=\'font-size:2.5rem;\'></i>'">
+                                            <i th:unless="${item.product.imageUrl != null}"
+                                               class="bi bi-drone text-muted" style="font-size:2.5rem;"></i>
+                                        </div>
+                                    </div>
+
+                                    <!-- 상품 정보 -->
+                                    <div class="flex-grow-1 cart-item-info">
+                                        <h6 class="mb-1 fw-bold">
+                                            <a th:href="@{/products/{id}(id=${item.product.id})}"
+                                               th:text="${item.product.name}"
+                                               class="text-decoration-none text-dark">상품명</a>
+                                        </h6>
+                                        <!-- 선택 옵션 표시 -->
+                                        <p th:if="${item.selectedOptionName != null}"
+                                           class="text-secondary small mb-1">
+                                            <i class="bi bi-tag me-1"></i>
+                                            <span th:text="${item.selectedOptionName}"></span>
+                                            <span th:if="${item.selectedOptionExtraPrice != null and item.selectedOptionExtraPrice > 0}"
+                                                  class="text-primary ms-1"
+                                                  th:text="'(+' + ${#numbers.formatInteger(item.selectedOptionExtraPrice, 0, 'COMMA')} + '원)'"></span>
+                                        </p>
+                                        <p class="text-muted small mb-1">
+                                            <span th:text="${item.product.category}">카테고리</span>
+                                            <span th:if="${item.product.freeShipping}"
+                                                  class="badge bg-success-subtle text-success border border-success-subtle ms-1"
+                                                  style="font-size:0.68rem;">무료배송</span>
+                                        </p>
+                                        <p class="mb-0">
+                                            <span th:if="${unitPrice < origUnit}" class="text-muted text-decoration-line-through small me-1"
+                                                  th:text="${#numbers.formatInteger(origUnit, 0, 'COMMA') + '원'}">0원</span>
+                                            <span class="text-primary fw-bold"
+                                                  th:text="${#numbers.formatInteger(unitPrice, 0, 'COMMA') + '원'}">0원</span>
+                                            <span th:if="${unitPrice < origUnit}" class="cart-grade-discount ms-1"
+                                                  th:text="'-' + ${gradeDiscountPercent} + '%'">-20%</span>
+                                        </p>
+                                    </div>
+
+                                    <!-- 수량 조절 -->
+                                    <div class="flex-shrink-0 cart-item-qty">
+                                        <form th:action="@{/cart/update}" method="post" class="d-flex align-items-center gap-2 cart-update-form">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                            <input type="hidden" name="cartItemId" th:value="${item.id}">
+                                            <div class="input-group input-group-sm cart-qty-group">
+                                                <button type="button" class="btn btn-outline-secondary qty-minus">−</button>
+                                                <input type="number" name="quantity" class="form-control text-center qty-input"
+                                                       th:value="${item.quantity}" min="1"
+                                                       th:max="${item.product.stock}" style="width:50px;">
+                                                <button type="button" class="btn btn-outline-secondary qty-plus">+</button>
+                                            </div>
+                                        </form>
+                                    </div>
+
+                                    <!-- 소계 + 삭제 -->
+                                    <div class="flex-shrink-0 text-end cart-item-side" style="min-width:120px;">
+                                        <p class="fw-bold mb-1 item-subtotal"
+                                           th:text="${#numbers.formatInteger(unitPrice * item.quantity, 0, 'COMMA') + '원'}">0원</p>
+                                        <form th:action="@{/cart/remove}" method="post" class="d-inline">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                            <input type="hidden" name="cartItemId" th:value="${item.id}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger cart-delete-btn">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 결제 요약 -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white fw-bold">
+                            <i class="bi bi-receipt me-2 text-primary"></i>주문 요약
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">상품 합계</span>
+                                <span id="cartSubtotal" th:text="${#numbers.formatInteger(totalPrice, 0, 'COMMA') + '원'}">0원</span>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">배송비</span>
+                                    <span th:if="${shippingFee == 0}" class="text-success fw-semibold">무료</span>
+                                    <span th:unless="${shippingFee == 0}" class="fw-semibold"
+                                          th:text="${#numbers.formatInteger(shippingFee, 0, 'COMMA') + '원'}"></span>
+                                </div>
+                                <!-- 유료배송 상품 안내 -->
+                                <div th:if="${shippingFee > 0 and !#lists.isEmpty(paidShippingNames)}"
+                                     class="text-muted mt-1" style="font-size:0.78rem;">
+                                    <i class="bi bi-info-circle me-1 text-warning"></i>
+                                    <span th:text="${#strings.listJoin(paidShippingNames, ', ')}"></span>
+                                    <span th:if="${#lists.size(paidShippingNames) == 1}">은(는)</span>
+                                    <span th:if="${#lists.size(paidShippingNames) > 1}">에</span>
+                                    배송비가 발생합니다.
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between mb-4">
+                                <span class="fw-bold fs-5">총 결제금액</span>
+                                <span id="cartTotal" class="fw-bold fs-5 text-primary"
+                                      th:text="${#numbers.formatInteger(totalPrice + shippingFee, 0, 'COMMA') + '원'}">0원</span>
+                            </div>
+                            <a th:href="@{/order/form(fromCart=true)}"
+                               class="btn btn-primary w-100 btn-lg mb-2 fw-bold">
+                                <i class="bi bi-bag-check me-2"></i>주문하기
+                            </a>
+                            <a th:href="@{/quotation/form}"
+                               class="btn btn-outline-primary w-100 mb-2 fw-semibold">
+                                <i class="bi bi-file-earmark-pdf me-2"></i>견적서 발행 (PDF)
+                            </a>
+                            <a th:href="@{/inquiry}" class="btn btn-outline-secondary w-100 mb-2">
+                                <i class="bi bi-chat-dots me-1"></i>견적 문의하기
+                            </a>
+                            <a th:href="@{/products}" class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-arrow-left me-1"></i>쇼핑 계속하기
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<script th:inline="javascript">
+    var cartShippingFee = /*[[${shippingFee}]]*/ 0;
+
+    function fmt(n) {
+        return n.toLocaleString('ko-KR') + '원';
+    }
+
+    function recalcTotal() {
+        let total = 0;
+        document.querySelectorAll('.cart-item-row').forEach(row => {
+            const price = parseInt(row.dataset.price) || 0;
+            const qty   = parseInt(row.querySelector('.qty-input').value) || 1;
+            const sub   = price * qty;
+            row.querySelector('.item-subtotal').textContent = fmt(sub);
+            total += sub;
+        });
+        document.getElementById('cartSubtotal').textContent = fmt(total);
+        document.getElementById('cartTotal').textContent    = fmt(total + cartShippingFee);
+    }
+
+    document.querySelectorAll('.cart-item-row').forEach(row => {
+        const input  = row.querySelector('.qty-input');
+        const maxQty = parseInt(row.dataset.max) || 999;
+        let debounceTimer;
+
+        function changeQty(delta) {
+            let v = parseInt(input.value) || 1;
+            v = Math.min(Math.max(v + delta, 1), maxQty);
+            input.value = v;
+            recalcTotal();
+            scheduleSubmit();
+        }
+
+        function scheduleSubmit() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                row.querySelector('.cart-update-form').submit();
+            }, 700);
+        }
+
+        row.querySelector('.qty-minus').addEventListener('click', () => changeQty(-1));
+        row.querySelector('.qty-plus').addEventListener('click',  () => changeQty(+1));
+
+        input.addEventListener('input', () => {
+            let v = parseInt(input.value);
+            if (isNaN(v) || v < 1) input.value = 1;
+            else if (v > maxQty) input.value = maxQty;
+            recalcTotal();
+            scheduleSubmit();
+        });
+    });
+</script>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

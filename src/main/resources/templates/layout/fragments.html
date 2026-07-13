@@ -1,0 +1,2569 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<!-- ── HEAD ─────────────────────────────────────────── -->
+<th:block th:fragment="head(pageTitle)">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="naver-site-verification" content="b3dc1e43fbc75d3d3f3f929e51eeb1c9a201c8cf" />
+<meta name="google-site-verification" content="6T_2o46F8Ryk8WiwJ1FtplORq93EOZihiR3T2YdmapM" />
+<meta th:if="${_csrf != null}" name="_csrf" th:content="${_csrf.token}">
+<meta th:if="${_csrf != null}" name="_csrf_header" th:content="${_csrf.headerName}">
+<title th:text="${pageTitle} + ' - 라이트드론'">라이트드론</title>
+
+<!-- SEO meta description -->
+<meta name="description" th:content="${ogDescription ?: '농업용 드론 전문 판매몰 | 라이트드론에서 최고의 농업용 드론을 만나보세요. 조립완성기체, 부품, A/S까지 한 번에.'}">
+<meta name="keywords" content="농업용드론, 농업드론, 방제드론, 드론판매, 라이트드론, 농업기계">
+<link rel="canonical" th:href="${canonicalUrl}">
+
+<!-- Open Graph (카카오톡·네이버밴드·페이스북 공유 시 미리보기) -->
+<meta property="og:type" th:content="${ogType ?: 'website'}">
+<meta property="og:site_name" content="라이트드론">
+<meta property="og:title" th:content="${ogTitle ?: (pageTitle + ' - 라이트드론')}">
+<meta property="og:description" th:content="${ogDescription ?: '농업용 드론 전문 판매몰 | 라이트드론에서 최고의 농업용 드론을 만나보세요.'}">
+<meta property="og:image" th:content="${ogImage != null and (#strings.startsWith(ogImage, 'http://') or #strings.startsWith(ogImage, 'https://')) ? ogImage : siteUrl + (ogImage ?: '/images/og-default.png')}">
+<meta property="og:image:secure_url" th:content="${ogImage != null and #strings.startsWith(ogImage, 'https://') ? ogImage : (ogImage != null and #strings.startsWith(ogImage, 'http://') ? ogImage : siteUrl + (ogImage ?: '/images/og-default.png'))}">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="LIGHT DRONE">
+<meta property="og:url" th:content="${canonicalUrl}">
+<meta property="og:locale" content="ko_KR">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" th:content="${ogTitle ?: (pageTitle + ' - 라이트드론')}">
+<meta name="twitter:description" th:content="${ogDescription ?: '농업용 드론 전문 판매몰 | 라이트드론에서 최고의 농업용 드론을 만나보세요.'}">
+<meta name="twitter:image" th:content="${ogImage != null and (#strings.startsWith(ogImage, 'http://') or #strings.startsWith(ogImage, 'https://')) ? ogImage : siteUrl + (ogImage ?: '/images/og-default.png')}">
+
+<link rel="icon" type="image/png" sizes="32x32" th:href="@{/images/favicon.png}">
+<link rel="apple-touch-icon" sizes="180x180" th:href="@{/images/apple-touch-icon.png}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500&display=swap">
+<link rel="stylesheet" th:href="@{/css/style.css}">
+
+<!-- 구조화 데이터(JSON-LD): 업체 정보 — 검색결과 리치 스니펫용 -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Store",
+  "name": "라이트드론",
+  "legalName": "(주)라이트드론",
+  "url": "https://lightdrone.co.kr",
+  "logo": "https://lightdrone.co.kr/images/logo.png",
+  "image": "https://lightdrone.co.kr/images/og-default.png",
+  "description": "농업용 드론 전문 판매 업체. 방제·파종 드론, 조립완성기체, 드론 부품 및 기자재, A/S까지 제공합니다.",
+  "telephone": "+82-10-3565-9741",
+  "priceRange": "₩₩₩",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "강서구 과학산단1로60번길 31, 8동 301호",
+    "addressLocality": "부산광역시",
+    "postalCode": "46742",
+    "addressCountry": "KR"
+  },
+  "sameAs": ["https://lightdrone.co.kr"]
+}
+</script>
+</th:block>
+
+<!-- ── HEADER (2단 네비게이션) ────────────────────────── -->
+<header th:fragment="navbar" id="siteHeader">
+
+    <!-- ⓪ 최상단 유틸리티 바 -->
+    <div class="header-util-bar">
+        <div class="container header-util-inner">
+
+            <!-- 우측: 유틸리티 -->
+            <div class="header-util-right">
+
+                <!-- 비로그인 -->
+                <div sec:authorize="!isAuthenticated()" class="header-util-links">
+                    <a href="/auth/login" class="util-bar-link">로그인</a>
+                    <a th:href="@{/auth/signup}" class="util-bar-link">회원가입</a>
+                    <a th:href="@{/cart}" class="util-bar-link util-bar-cart" title="장바구니">
+                        <i class="bi bi-cart3"></i>
+                        <span class="cart-badge" id="cartBadge">0</span>
+                    </a>
+                </div>
+
+                <!-- 로그인 -->
+                <div sec:authorize="isAuthenticated()" class="header-util-links">
+                    <div class="dropdown util-bar-dropdown">
+                        <a class="util-bar-link dropdown-toggle" th:href="@{/mypage}" role="button">
+                            <th:block sec:authorize="hasRole('ADMIN')">
+                                <span class="util-bar-admin">관리자</span>
+                            </th:block>
+                            <span th:text="${currentMemberName} ?: '회원'">회원</span>님
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" th:href="@{/mypage}">마이페이지</a></li>
+                            <li><a class="dropdown-item" th:href="@{/inquiry/my}">내 문의내역</a></li>
+                            <li sec:authorize="hasRole('ADMIN')">
+                                <a class="dropdown-item" th:href="@{/admin}">관리 페이지</a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form th:action="@{/auth/logout}" method="post">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                    <button type="submit" class="dropdown-item text-danger">로그아웃</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                    <a th:href="@{/cart}" class="util-bar-link util-bar-cart" id="cartLink" title="장바구니">
+                        <i class="bi bi-cart3"></i>
+                        <span class="cart-badge" id="cartBadge">0</span>
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ① 상단바 : 검색 + 로고(중앙) + 로그인/장바구니 -->
+    <div class="header-top">
+        <div class="container header-top-inner">
+
+            <!-- 좌측: (검색창은 하단 메뉴바로 이동) -->
+            <div class="header-top-left"></div>
+
+            <!-- 중앙: 로고 -->
+            <a class="header-brand" th:href="@{/}">
+                <img th:src="@{/images/logo.png}" alt="LIGHT DRONE" class="brand-logo">
+            </a>
+
+            <!-- 모바일 전용: 로고와 한 줄로 이어 붙인 검색창 -->
+            <form th:action="@{/products}" method="get" class="header-mobile-search d-lg-none">
+                <input type="text" name="keyword" placeholder="제품명·상품코드 검색"
+                       aria-label="제품 검색어" autocomplete="off">
+                <button type="submit" aria-label="검색"><i class="bi bi-search"></i></button>
+            </form>
+
+            <!-- 우측: (유틸리티는 최상단 바로 이동) -->
+            <div class="header-top-right"></div>
+        </div>
+    </div>
+
+    <!-- ② 메인 메뉴바 : 견적문의 / 회사소개 / 제품 메뉴얼 / A/S 안내 -->
+    <nav class="header-nav navbar navbar-expand-lg" id="mainNav">
+        <div class="container-fluid px-0">
+            <!-- 모바일 전용: 사이드(슬라이드) 메뉴 토글 — 마이페이지/문의 사이드바가 있는 페이지에서만 노출 -->
+            <button class="nav-sidebar-toggle" type="button" id="navSidebarToggle"
+                    onclick="toggleMypageSidebar()" aria-label="메뉴 열기">
+                <i class="bi bi-list"></i>
+            </button>
+            <!-- 좌측 영역: 우측 검색존과 동일 폭의 빈 공간 (메뉴 중앙정렬용) -->
+            <div class="nav-left d-none d-lg-block"></div>
+            <button class="nav-toggler navbar-toggler d-lg-none ms-3" type="button" data-bs-toggle="collapse" data-bs-target="#mainMenu"
+                    aria-expanded="false" aria-label="메뉴 열기">
+                <i class="bi bi-list"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="mainMenu">
+                <ul class="main-menu list-unstyled mb-0 w-100">
+                    <li class="menu-item has-megadrop">
+                        <a class="menu-link menu-link-all" th:href="@{/products}">
+                            <i class="bi bi-list"></i>
+                            <span>전체카테고리</span>
+                        </a>
+                        <div class="menu-megadrop">
+                            <div class="menu-megadrop-col" th:each="cat : ${navCategories}">
+                                <a class="menu-megadrop-title" th:href="@{/products(category=${cat.name})}"
+                                   th:text="${cat.name}">카테고리</a>
+                                <a class="menu-megadrop-sub" th:each="sub : ${cat.subcategories}"
+                                   th:href="@{/products(category=${cat.name}, subcategory=${sub.name})}"
+                                   th:text="${sub.name}">서브카테고리</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="menu-item" th:each="cat : ${navCategories}"
+                        th:classappend="${!#lists.isEmpty(cat.subcategories)} ? ' has-dropdown' : ''">
+                        <a class="menu-link" th:href="@{/products(category=${cat.name})}">
+                            <span th:text="${cat.name}">카테고리</span>
+                        </a>
+                        <div class="menu-dropdown" th:if="${!#lists.isEmpty(cat.subcategories)}">
+                            <a class="menu-dropdown-link" th:each="sub : ${cat.subcategories}"
+                               th:href="@{/products(category=${cat.name}, subcategory=${sub.name})}"
+                               th:text="${sub.name}">서브카테고리</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <!-- 우측 영역: 검색창 (메뉴 우측 정렬) -->
+            <div class="nav-right d-none d-lg-flex">
+                <form th:action="@{/products}" method="get" class="nav-search-form">
+                    <div class="header-search-wrap">
+                        <input type="text" name="keyword" placeholder="제품명 또는 상품코드를 검색해주세요"
+                               class="header-search-input" aria-label="제품 검색어" autocomplete="off">
+                        <button type="submit" class="header-search-btn" aria-label="검색"><i class="bi bi-search"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ③ 메가메뉴 패널 -->
+    <div id="megaMenuPanel" class="mega-menu-panel" style="display:none;">
+        <div class="mega-menu-inner container-fluid">
+
+            <!-- 헤더 -->
+            <div class="mega-menu-header d-flex align-items-center justify-content-between">
+                <span class="fw-bold d-inline-flex align-items-baseline">
+                    <i class="bi bi-grid-3x3-gap me-2"></i>카테고리 전체보기
+                    <a th:href="@{/products}" class="mega-allprod-link ms-3">
+                        전체 제품 보기<i class="bi bi-chevron-right ms-1"></i>
+                    </a>
+                </span>
+                <button type="button" id="megaMenuClose" class="mega-close-btn" aria-label="제품 메뉴 닫기">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <!-- 카테고리 탭 바 -->
+            <div class="mega-cat-bar">
+                <a th:href="@{/products}" class="mega-cat-tab mega-all-tab">
+                    <i class="bi bi-grid me-1"></i>전체보기
+                </a>
+                <a th:each="cat : ${navCategories}"
+                   th:href="@{/products(category=${cat.name})}"
+                   class="mega-cat-tab"
+                   th:data-cat="${cat.name}"
+                   th:text="${cat.name}">카테고리</a>
+            </div>
+
+            <!-- 서브카테고리 영역 -->
+            <div class="mega-sub-area" id="megaSubArea">
+
+                <!-- 전체보기 그리드: 기본 상태 및 전체보기 탭 활성 시 표시 -->
+                <div id="megaAllView" class="mega-all-view">
+                    <div th:each="cat : ${navCategories}" class="mega-all-col" th:data-cat="${cat.name}">
+                        <div class="mega-all-col-head">
+                            <a th:href="@{/products(category=${cat.name})}"
+                               class="mega-all-col-title"
+                               th:text="${cat.name}">카테고리</a>
+                        </div>
+                        <a th:each="sub : ${cat.subcategories}"
+                           th:href="@{/products(category=${cat.name}, subcategory=${sub.name})}"
+                           class="mega-all-subcat"
+                           th:text="${sub.name}">서브카테고리</a>
+                    </div>
+                </div>
+
+                <!-- 개별 카테고리 서브패널: 카테고리 탭 호버 시 표시 -->
+                <div th:each="cat : ${navCategories}"
+                     class="mega-sub-panel"
+                     th:data-cat="${cat.name}">
+                    <a th:href="@{/products(category=${cat.name})}"
+                       class="mega-subcat-chip mega-subcat-all"
+                       th:text="${cat.name} + ' 전체'">카테고리 전체</a>
+                    <a th:each="sub : ${cat.subcategories}"
+                       th:href="@{/products(category=${cat.name}, subcategory=${sub.name})}"
+                       class="mega-subcat-chip"
+                       th:text="${sub.name}">서브카테고리</a>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+    <!-- 메가메뉴 오버레이 -->
+    <div id="megaMenuOverlay" class="mega-overlay" style="display:none;"></div>
+
+</header>
+
+<!-- ── MYPAGE SIDEBAR ─────────────────────────────── -->
+<div th:fragment="mypageSidebar(activeMenu)" class="col-md-3 mypage-sidebar-col" id="mypageSidebarCol">
+    <div class="position-relative">
+    <div class="card border-0 shadow-none mypage-clean-sidebar" style="position:sticky;top:200px;">
+    <button type="button" class="sidebar-collapse-btn" onclick="toggleMypageSidebar()" title="사이드바 접기">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+        <div class="card-body text-center p-4">
+            <div class="mb-2 text-primary" style="font-size:1.25rem;"><i class="bi bi-person"></i></div>
+            <h5 class="fw-bold mb-0" th:text="${member != null ? member.name : ''}">이름</h5>
+            <p class="text-muted small mb-0"
+               th:if="${member != null and member.provider == null}"
+               th:text="${member.username}">아이디</p>
+        </div>
+        <div class="list-group list-group-flush">
+            <a th:href="@{/mypage}" data-label="대시보드"
+               class="list-group-item list-group-item-action"
+               th:classappend="${activeMenu == 'dashboard'} ? ' active' : ''">
+                <i class="bi bi-house me-2"></i>대시보드
+            </a>
+            <a th:href="@{/cart}" data-label="장바구니"
+               class="list-group-item list-group-item-action"
+               th:classappend="${activeMenu == 'cart'} ? ' active' : ''">
+                <i class="bi bi-cart3 me-2"></i>장바구니
+                <span th:if="${cartCount != null and cartCount > 0}"
+                      class="badge bg-primary float-end" th:text="${cartCount}"></span>
+            </a>
+            <a th:href="@{/order/my}" data-label="주문 내역"
+               class="list-group-item list-group-item-action"
+               th:classappend="${activeMenu == 'order'} ? ' active' : ''">
+                <i class="bi bi-bag-check me-2"></i>주문 내역
+            </a>
+            <a th:href="@{/inquiry/my}" data-label="문의내역"
+               class="list-group-item list-group-item-action"
+               th:classappend="${activeMenu == 'inquiry'} ? ' active' : ''">
+                <i class="bi bi-envelope me-2"></i>문의내역
+            </a>
+            <a th:href="@{/inquiry}" data-label="새 문의 작성"
+               class="list-group-item list-group-item-action"
+               th:classappend="${activeMenu == 'newInquiry'} ? ' active' : ''">
+                <i class="bi bi-pencil-square me-2"></i>새 문의 작성
+            </a>
+            <a th:href="@{/mypage/verify}" data-label="내 정보 수정"
+               class="list-group-item list-group-item-action"
+               th:classappend="${activeMenu == 'edit'} ? ' active' : ''">
+                <i class="bi bi-person-gear me-2"></i>내 정보 수정
+            </a>
+        </div>
+    </div>
+        <form th:action="@{/auth/logout}" method="post" class="mypage-mobile-logout">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit" class="mypage-mobile-logout-btn">
+                <i class="bi bi-box-arrow-right me-2"></i>로그아웃
+            </button>
+        </form>
+    </div>
+
+    <style>
+        .sidebar-collapse-btn {
+            position: absolute; top: 14px; right: 14px; z-index: 5;
+            width: 32px; height: 32px; padding: 0; line-height: 1;
+            display: inline-flex; align-items: center; justify-content: center;
+            background: #fff; border: 1px solid #dbe4ff; border-radius: 0;
+            color: #0d6efd; cursor: pointer; font-size: 1.05rem;
+            box-shadow: 0 8px 18px rgba(15,23,42,.08);
+            transition: color .15s, border-color .15s, background .15s;
+        }
+        .sidebar-collapse-btn:hover { background: #f5f8ff; border-color: #0d6efd; color: #0b5ed7; }
+        .mypage-sidebar-col.collapsed { display: none !important; }
+        .sidebar-show-btn {
+            position: fixed; left: 0; top: 200px; z-index: 1030;
+            width: auto; min-width: 84px; height: 42px; padding: 0 14px;
+            display: none; align-items: center; justify-content: center; gap: 6px;
+            background: var(--primary, #1a4fd8); color: #fff; border: none;
+            border-radius: 0 8px 8px 0; cursor: pointer; font-size: 1.1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,.22);
+            white-space: nowrap;
+        }
+        .sidebar-show-btn span { font-size: .82rem; font-weight: 600; letter-spacing: -.02em; }
+        .sidebar-show-btn:hover { background: var(--primary-dark, #1040bc); }
+        .mypage-sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 12010;
+            background: rgba(15, 23, 42, .32);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .22s ease;
+        }
+        .mypage-clean-sidebar {
+            border: 1px solid #e3e8ef !important;
+            border-radius: 0 !important;
+            background: #fff !important;
+            box-shadow: 0 14px 34px rgba(15,23,42,.055);
+            padding: 0 0 14px;
+        }
+        .mypage-clean-sidebar .card-body {
+            padding: 24px 18px 18px !important;
+            border-bottom: 1px solid #e6ebf1;
+        }
+        .mypage-clean-sidebar .list-group-item {
+            border: 0;
+            border-bottom: 1px solid #edf0f4;
+            border-radius: 0 !important;
+            background: transparent;
+            color: transparent;
+            font-size: 0;
+            padding: 13px 18px;
+            font-weight: 500;
+            transition: background .15s ease, color .15s ease;
+        }
+        .mypage-clean-sidebar .list-group-item i {
+            color: #9aa3af;
+            font-size: .95rem;
+        }
+        .mypage-clean-sidebar .list-group-item::after {
+            content: attr(data-label);
+            color: #3f4652;
+            font-size: .9rem;
+        }
+        .mypage-clean-sidebar .list-group-item.active {
+            background: #0d6efd;
+            color: transparent;
+        }
+        .mypage-clean-sidebar .list-group-item:hover { background: #fbfcff; }
+        .mypage-clean-sidebar .list-group-item.active:hover { background: #0d6efd; }
+        .mypage-clean-sidebar .list-group-item.active i,
+        .mypage-clean-sidebar .list-group-item.active::after {
+            color: #fff;
+        }
+        .mypage-clean-sidebar .list-group-item:hover i,
+        .mypage-clean-sidebar .list-group-item:hover::after {
+            color: #0d6efd;
+        }
+        .mypage-clean-sidebar .badge {
+            font-size: .76rem;
+            font-weight: 700;
+            border-radius: 999px;
+            background: #e23b3b !important;
+            color: #fff !important;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 7px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            margin-top: 1px;
+        }
+        .mypage-clean-sidebar .list-group-item.active .badge {
+            background: #fff !important;
+            color: #0d6efd !important;
+        }
+        .mypage-mobile-logout { display: none; margin: 12px 0 0; }
+        .mypage-mobile-logout-btn {
+            width: 100%;
+            border: 1px solid #dfe5ee;
+            background: #fff;
+            color: #4b5563;
+            padding: 11px 14px;
+            text-align: left;
+            font-size: .9rem;
+            font-weight: 500;
+        }
+        .mypage-mobile-logout-btn:hover {
+            border-color: #dc2626;
+            color: #dc2626;
+        }
+        @media (max-width: 767.98px) {
+            .mypage-sidebar-col {
+                position: fixed !important;
+                top: 0;
+                left: 0;
+                z-index: 12030;
+                width: min(82vw, 320px) !important;
+                max-width: 320px;
+                height: 100vh;
+                padding: 0 14px 18px !important;
+                background: #fff !important;
+                transform: translateX(-108%);
+                transition: transform .24s ease, opacity .2s ease, visibility .2s ease;
+                box-shadow: 12px 0 28px rgba(15,23,42,.16);
+                overflow-y: auto;
+                visibility: hidden;
+                opacity: 0;
+                pointer-events: none;
+            }
+            body:not(.mypage-sidebar-initialized) .mypage-sidebar-col {
+                transform: translateX(-108%);
+                visibility: hidden;
+                opacity: 0;
+                pointer-events: none;
+            }
+            body.mypage-sidebar-open .mypage-sidebar-col {
+                transform: translateX(0);
+                visibility: visible;
+                opacity: 1;
+                pointer-events: auto;
+            }
+            body.mypage-sidebar-open::before {
+                content: "";
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: min(82vw, 320px);
+                height: 48px;
+                background: #fff;
+                z-index: 12020;
+                pointer-events: none;
+            }
+            body.mypage-sidebar-open .mypage-sidebar-backdrop {
+                opacity: 1;
+                pointer-events: auto;
+            }
+            .mypage-clean-sidebar {
+                position: static !important;
+                top: auto !important;
+                box-shadow: none;
+                margin-top: 0 !important;
+                min-height: 100%;
+            }
+            .mypage-clean-sidebar .card-body {
+                padding-top: 18px !important;
+            }
+            .sidebar-collapse-btn {
+                top: 12px;
+                right: 12px;
+            }
+            /* 슬라이드 메뉴가 열리면 고정 헤더(상단 유틸바)를 숨겨 메뉴 위 빈 공간 제거 */
+            body.mypage-sidebar-open #siteHeader { display: none !important; }
+            /* 모바일에서는 플로팅 펼치기 버튼 숨김 — 네비바 좌측 토글로 대체 */
+            .sidebar-show-btn { display: none !important; }
+            .mypage-mobile-logout { display: block; }
+        }
+    </style>
+    <script>
+    (function () {
+        if (window.__mypageSidebarInit) return;
+        window.__mypageSidebarInit = true;
+
+        function isMobileSidebar() {
+            return window.matchMedia && window.matchMedia('(max-width: 767.98px)').matches;
+        }
+
+        function ensureBackdrop() {
+            var backdrop = document.getElementById('mypageSidebarBackdrop');
+            if (backdrop) return backdrop;
+            backdrop = document.createElement('button');
+            backdrop.type = 'button';
+            backdrop.id = 'mypageSidebarBackdrop';
+            backdrop.className = 'mypage-sidebar-backdrop';
+            backdrop.setAttribute('aria-label', '사이드 메뉴 닫기');
+            backdrop.addEventListener('click', function () { setSidebar(true); });
+            document.body.appendChild(backdrop);
+            return backdrop;
+        }
+
+        function setSidebar(collapsed) {
+            var col = document.getElementById('mypageSidebarCol');
+            if (!col) return;
+            var content = col.nextElementSibling;
+            var mobile = isMobileSidebar();
+            col.classList.toggle('collapsed', !mobile && collapsed);
+            document.body.classList.add('mypage-sidebar-initialized');
+            document.body.classList.toggle('mypage-sidebar-open', mobile && !collapsed);
+            if (content) {
+                if (collapsed && content.classList.contains('col-md-9')) {
+                    content.classList.remove('col-md-9');
+                    content.classList.add('col-md-12');
+                } else if (!collapsed && content.classList.contains('col-md-12')) {
+                    content.classList.remove('col-md-12');
+                    content.classList.add('col-md-9');
+                }
+            }
+            var showBtn = document.getElementById('sidebarShowBtn');
+            if (showBtn) {
+                showBtn.style.display = collapsed ? 'inline-flex' : 'none';
+                showBtn.setAttribute('aria-expanded', (!collapsed).toString());
+            }
+            if (!mobile) {
+                try { localStorage.setItem('mypageSidebarCollapsed', collapsed ? '1' : '0'); } catch (e) {}
+            }
+        }
+
+        window.toggleMypageSidebar = function () {
+            var col = document.getElementById('mypageSidebarCol');
+            if (!col) return;
+            if (isMobileSidebar()) {
+                setSidebar(document.body.classList.contains('mypage-sidebar-open'));
+                return;
+            }
+            setSidebar(!col.classList.contains('collapsed'));
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var col = document.getElementById('mypageSidebarCol');
+            if (!col) return;
+            ensureBackdrop();
+            // 데스크톱 전용 플로팅 펼치기 버튼 (모바일에서는 CSS로 숨김)
+            var showBtn = document.createElement('button');
+            showBtn.type = 'button';
+            showBtn.id = 'sidebarShowBtn';
+            showBtn.className = 'sidebar-show-btn';
+            showBtn.title = '사이드바 펼치기';
+            showBtn.innerHTML = '<i class="bi bi-list"></i><span>메뉴</span>';
+            showBtn.addEventListener('click', function () { setSidebar(false); });
+            document.body.appendChild(showBtn);
+
+            // 모바일 전용: 네비바 좌측 토글 버튼 활성화
+            var navToggle = document.getElementById('navSidebarToggle');
+            if (navToggle) navToggle.classList.add('is-active');
+
+            col.querySelectorAll('a').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    if (isMobileSidebar()) setSidebar(true);
+                });
+            });
+
+            var collapsed = false;
+            var mobile = isMobileSidebar();
+            try { collapsed = mobile ? true : localStorage.getItem('mypageSidebarCollapsed') === '1'; } catch (e) { collapsed = mobile; }
+            setSidebar(collapsed);
+
+            window.addEventListener('resize', function () {
+                if (isMobileSidebar()) {
+                    setSidebar(true);
+                } else {
+                    var desktopCollapsed = false;
+                    try { desktopCollapsed = localStorage.getItem('mypageSidebarCollapsed') === '1'; } catch (e) {}
+                    document.body.classList.remove('mypage-sidebar-open');
+                    setSidebar(desktopCollapsed);
+                }
+            });
+        });
+    })();
+    </script>
+</div>
+
+<!-- ── INQUIRY SIDEBAR (로그인/비로그인 공용) ──────────── -->
+<div th:fragment="inquirySidebar(activeMenu)" class="col-md-3 mypage-sidebar-col" id="mypageSidebarCol">
+    <div class="position-relative">
+    <div class="card border-0 shadow-none mypage-clean-sidebar" style="position:sticky;top:200px;">
+    <button type="button" class="sidebar-collapse-btn" onclick="toggleMypageSidebar()" title="사이드바 접기">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+
+        <!-- 로그인 상태: 사용자 정보 -->
+        <div sec:authorize="isAuthenticated()" class="card-body text-center p-4">
+            <div class="mb-2 text-primary" style="font-size:1.25rem;"><i class="bi bi-person"></i></div>
+            <h5 class="fw-bold mb-0" th:text="${member != null ? member.name : ''}">이름</h5>
+            <p class="text-muted small mb-0"
+               th:if="${member != null and member.provider == null}"
+               th:text="${member.username}">아이디</p>
+        </div>
+
+        <!-- 비로그인 상태: 로그인 안내 -->
+        <div sec:authorize="!isAuthenticated()" class="card-body text-center p-3">
+            <i class="bi bi-person-circle text-secondary" style="font-size:2.2rem;"></i>
+            <p class="text-muted small mt-2 mb-2">로그인 후 더 많은<br>기능을 이용하세요.</p>
+            <a th:href="@{/auth/login}" class="btn btn-sm btn-primary w-100">로그인</a>
+        </div>
+
+        <div class="list-group list-group-flush">
+            <!-- 로그인 시에만 -->
+            <a sec:authorize="isAuthenticated()" th:href="@{/mypage}" data-label="대시보드"
+               class="list-group-item list-group-item-action"
+               th:classappend="${activeMenu == 'dashboard'} ? ' active' : ''">
+                <i class="bi bi-house me-2"></i>대시보드
+            </a>
+            <a sec:authorize="isAuthenticated()" th:href="@{/cart}" data-label="장바구니"
+               class="list-group-item list-group-item-action"
+               th:classappend="${activeMenu == 'cart'} ? ' active' : ''">
+                <i class="bi bi-cart3 me-2"></i>장바구니
+                <span th:if="${cartCount != null and cartCount > 0}"
+                      class="badge bg-primary float-end" th:text="${cartCount}"></span>
+            </a>
+            <a sec:authorize="isAuthenticated()" th:href="@{/order/my}" data-label="주문 내역"
+               class="list-group-item list-group-item-action"
+               th:classappend="${activeMenu == 'order'} ? ' active' : ''">
+                <i class="bi bi-bag-check me-2"></i>주문 내역
+            </a>
+            <!-- 문의내역: 로그인 → /inquiry/my, 비로그인 → /inquiry/lookup -->
+            <a sec:authorize="isAuthenticated()" th:href="@{/inquiry/my}" data-label="문의내역"
+               class="list-group-item list-group-item-action"
+               th:classappend="${activeMenu == 'inquiry'} ? ' active' : ''">
+                <i class="bi bi-envelope me-2"></i>문의내역
+            </a>
+            <a sec:authorize="!isAuthenticated()" th:href="@{/inquiry/lookup}" data-label="문의내역"
+               class="list-group-item list-group-item-action"
+               th:classappend="${activeMenu == 'inquiry'} ? ' active' : ''">
+                <i class="bi bi-envelope me-2"></i>문의내역
+            </a>
+            <!-- 항상 표시 -->
+            <a th:href="@{/inquiry}" data-label="새 문의 작성"
+               class="list-group-item list-group-item-action"
+               th:classappend="${activeMenu == 'newInquiry'} ? ' active' : ''">
+                <i class="bi bi-pencil-square me-2"></i>새 문의 작성
+            </a>
+            <!-- 로그인 시에만 -->
+            <a sec:authorize="isAuthenticated()" th:href="@{/mypage/verify}" data-label="내 정보 수정"
+               class="list-group-item list-group-item-action"
+               th:classappend="${activeMenu == 'edit'} ? ' active' : ''">
+                <i class="bi bi-person-gear me-2"></i>내 정보 수정
+            </a>
+        </div>
+    </div>
+        <form sec:authorize="isAuthenticated()" th:action="@{/auth/logout}" method="post" class="mypage-mobile-logout">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit" class="mypage-mobile-logout-btn">
+                <i class="bi bi-box-arrow-right me-2"></i>로그아웃
+            </button>
+        </form>
+    </div>
+
+    <style>
+        .sidebar-collapse-btn {
+            position: absolute; top: 14px; right: 14px; z-index: 5;
+            width: 32px; height: 32px; padding: 0; line-height: 1;
+            display: inline-flex; align-items: center; justify-content: center;
+            background: #fff; border: 1px solid #dbe4ff; border-radius: 0;
+            color: #0d6efd; cursor: pointer; font-size: 1.05rem;
+            box-shadow: 0 8px 18px rgba(15,23,42,.08);
+            transition: color .15s, border-color .15s, background .15s;
+        }
+        .sidebar-collapse-btn:hover { background: #f5f8ff; border-color: #0d6efd; color: #0b5ed7; }
+        .mypage-sidebar-col.collapsed { display: none !important; }
+        .sidebar-show-btn {
+            position: fixed; left: 0; top: 200px; z-index: 1030;
+            width: auto; min-width: 84px; height: 42px; padding: 0 14px;
+            display: none; align-items: center; justify-content: center; gap: 6px;
+            background: var(--primary, #1a4fd8); color: #fff; border: none;
+            border-radius: 0 8px 8px 0; cursor: pointer; font-size: 1.1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,.22);
+            white-space: nowrap;
+        }
+        .sidebar-show-btn span { font-size: .82rem; font-weight: 600; letter-spacing: -.02em; }
+        .sidebar-show-btn:hover { background: var(--primary-dark, #1040bc); }
+        .mypage-sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 12010;
+            background: rgba(15, 23, 42, .32);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .22s ease;
+        }
+        .mypage-clean-sidebar {
+            border: 1px solid #e3e8ef !important;
+            border-radius: 0 !important;
+            background: #fff !important;
+            box-shadow: 0 14px 34px rgba(15,23,42,.055);
+            padding: 0 0 14px;
+        }
+        .mypage-clean-sidebar .card-body {
+            padding: 24px 18px 18px !important;
+            border-bottom: 1px solid #e6ebf1;
+        }
+        .mypage-clean-sidebar .list-group-item {
+            border: 0;
+            border-bottom: 1px solid #edf0f4;
+            border-radius: 0 !important;
+            background: transparent;
+            color: transparent;
+            font-size: 0;
+            padding: 13px 18px;
+            font-weight: 500;
+            transition: background .15s ease, color .15s ease;
+        }
+        .mypage-clean-sidebar .list-group-item i {
+            color: #9aa3af;
+            font-size: .95rem;
+        }
+        .mypage-clean-sidebar .list-group-item::after {
+            content: attr(data-label);
+            color: #3f4652;
+            font-size: .9rem;
+        }
+        .mypage-clean-sidebar .list-group-item.active {
+            background: #0d6efd;
+            color: transparent;
+        }
+        .mypage-clean-sidebar .list-group-item:hover { background: #fbfcff; }
+        .mypage-clean-sidebar .list-group-item.active:hover { background: #0d6efd; }
+        .mypage-clean-sidebar .list-group-item.active i,
+        .mypage-clean-sidebar .list-group-item.active::after {
+            color: #fff;
+        }
+        .mypage-clean-sidebar .list-group-item:hover i,
+        .mypage-clean-sidebar .list-group-item:hover::after {
+            color: #0d6efd;
+        }
+        .mypage-clean-sidebar .badge {
+            font-size: .76rem;
+            font-weight: 700;
+            border-radius: 999px;
+            background: #e23b3b !important;
+            color: #fff !important;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 7px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            margin-top: 1px;
+        }
+        .mypage-clean-sidebar .list-group-item.active .badge {
+            background: #fff !important;
+            color: #0d6efd !important;
+        }
+        .mypage-mobile-logout { display: none; margin: 12px 0 0; }
+        .mypage-mobile-logout-btn {
+            width: 100%;
+            border: 1px solid #dfe5ee;
+            background: #fff;
+            color: #4b5563;
+            padding: 11px 14px;
+            text-align: left;
+            font-size: .9rem;
+            font-weight: 500;
+        }
+        .mypage-mobile-logout-btn:hover {
+            border-color: #dc2626;
+            color: #dc2626;
+        }
+        @media (max-width: 767.98px) {
+            .mypage-sidebar-col {
+                position: fixed !important;
+                top: 0;
+                left: 0;
+                z-index: 12030;
+                width: min(82vw, 320px) !important;
+                max-width: 320px;
+                height: 100vh;
+                padding: 0 14px 18px !important;
+                background: #fff !important;
+                transform: translateX(-108%);
+                transition: transform .24s ease, opacity .2s ease, visibility .2s ease;
+                box-shadow: 12px 0 28px rgba(15,23,42,.16);
+                overflow-y: auto;
+                visibility: hidden;
+                opacity: 0;
+                pointer-events: none;
+            }
+            body:not(.mypage-sidebar-initialized) .mypage-sidebar-col {
+                transform: translateX(-108%);
+                visibility: hidden;
+                opacity: 0;
+                pointer-events: none;
+            }
+            body.mypage-sidebar-open .mypage-sidebar-col {
+                transform: translateX(0);
+                visibility: visible;
+                opacity: 1;
+                pointer-events: auto;
+            }
+            body.mypage-sidebar-open::before {
+                content: "";
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: min(82vw, 320px);
+                height: 48px;
+                background: #fff;
+                z-index: 12020;
+                pointer-events: none;
+            }
+            body.mypage-sidebar-open .mypage-sidebar-backdrop {
+                opacity: 1;
+                pointer-events: auto;
+            }
+            .mypage-clean-sidebar {
+                position: static !important;
+                top: auto !important;
+                box-shadow: none;
+                margin-top: 0 !important;
+                min-height: 100%;
+            }
+            .mypage-clean-sidebar .card-body {
+                padding-top: 18px !important;
+            }
+            .sidebar-collapse-btn {
+                top: 12px;
+                right: 12px;
+            }
+            /* 슬라이드 메뉴가 열리면 고정 헤더(상단 유틸바)를 숨겨 메뉴 위 빈 공간 제거 */
+            body.mypage-sidebar-open #siteHeader { display: none !important; }
+            /* 모바일에서는 플로팅 펼치기 버튼 숨김 — 네비바 좌측 토글로 대체 */
+            .sidebar-show-btn { display: none !important; }
+            .mypage-mobile-logout { display: block; }
+        }
+    </style>
+    <script>
+    (function () {
+        if (window.__mypageSidebarInit) return;
+        window.__mypageSidebarInit = true;
+
+        function isMobileSidebar() {
+            return window.matchMedia && window.matchMedia('(max-width: 767.98px)').matches;
+        }
+
+        function ensureBackdrop() {
+            var backdrop = document.getElementById('mypageSidebarBackdrop');
+            if (backdrop) return backdrop;
+            backdrop = document.createElement('button');
+            backdrop.type = 'button';
+            backdrop.id = 'mypageSidebarBackdrop';
+            backdrop.className = 'mypage-sidebar-backdrop';
+            backdrop.setAttribute('aria-label', '사이드 메뉴 닫기');
+            backdrop.addEventListener('click', function () { setSidebar(true); });
+            document.body.appendChild(backdrop);
+            return backdrop;
+        }
+
+        function setSidebar(collapsed) {
+            var col = document.getElementById('mypageSidebarCol');
+            if (!col) return;
+            var content = col.nextElementSibling;
+            var mobile = isMobileSidebar();
+            col.classList.toggle('collapsed', !mobile && collapsed);
+            document.body.classList.add('mypage-sidebar-initialized');
+            document.body.classList.toggle('mypage-sidebar-open', mobile && !collapsed);
+            if (content) {
+                if (collapsed && content.classList.contains('col-md-9')) {
+                    content.classList.remove('col-md-9');
+                    content.classList.add('col-md-12');
+                } else if (!collapsed && content.classList.contains('col-md-12')) {
+                    content.classList.remove('col-md-12');
+                    content.classList.add('col-md-9');
+                }
+            }
+            var showBtn = document.getElementById('sidebarShowBtn');
+            if (showBtn) {
+                showBtn.style.display = collapsed ? 'inline-flex' : 'none';
+                showBtn.setAttribute('aria-expanded', (!collapsed).toString());
+            }
+            if (!mobile) {
+                try { localStorage.setItem('mypageSidebarCollapsed', collapsed ? '1' : '0'); } catch (e) {}
+            }
+        }
+
+        window.toggleMypageSidebar = function () {
+            var col = document.getElementById('mypageSidebarCol');
+            if (!col) return;
+            if (isMobileSidebar()) {
+                setSidebar(document.body.classList.contains('mypage-sidebar-open'));
+                return;
+            }
+            setSidebar(!col.classList.contains('collapsed'));
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var col = document.getElementById('mypageSidebarCol');
+            if (!col) return;
+            ensureBackdrop();
+            // 데스크톱 전용 플로팅 펼치기 버튼 (모바일에서는 CSS로 숨김)
+            var showBtn = document.createElement('button');
+            showBtn.type = 'button';
+            showBtn.id = 'sidebarShowBtn';
+            showBtn.className = 'sidebar-show-btn';
+            showBtn.title = '사이드바 펼치기';
+            showBtn.innerHTML = '<i class="bi bi-list"></i><span>메뉴</span>';
+            showBtn.addEventListener('click', function () { setSidebar(false); });
+            document.body.appendChild(showBtn);
+
+            // 모바일 전용: 네비바 좌측 토글 버튼 활성화
+            var navToggle = document.getElementById('navSidebarToggle');
+            if (navToggle) navToggle.classList.add('is-active');
+
+            col.querySelectorAll('a').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    if (isMobileSidebar()) setSidebar(true);
+                });
+            });
+
+            var collapsed = false;
+            var mobile = isMobileSidebar();
+            try { collapsed = mobile ? true : localStorage.getItem('mypageSidebarCollapsed') === '1'; } catch (e) { collapsed = mobile; }
+            setSidebar(collapsed);
+        });
+    })();
+    </script>
+</div>
+
+<!-- ── FOOTER ────────────────────────────────────────── -->
+<th:block th:fragment="footer">
+<footer class="footer bg-dark text-light pt-4 pb-3 mt-5">
+    <div class="container">
+
+        <!-- 상단 4컬럼 -->
+        <div class="row g-4 pb-3 border-bottom border-secondary">
+
+            <!-- 회사 소개 -->
+            <div class="col-lg-3 col-md-6">
+                <h5 class="text-white mb-2 fw-bold">
+                    <i class="bi bi-drone me-2"></i>라이트드론
+                </h5>
+                <p class="text-muted small mb-2">드론 판매 전문 쇼핑몰<br>전문가용부터 입문자용까지<br>최고의 드론을 합리적인 가격에 제공합니다.</p>
+                <ul class="list-unstyled small text-muted">
+                    <li class="mb-1">
+                        <i class="bi bi-person-fill me-2 text-secondary"></i>
+                        <strong class="text-light">대표</strong> : 이성희
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-building me-2 text-secondary"></i>
+                        <strong class="text-light">사업자등록번호</strong> : 621-06-23122
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-geo-alt-fill me-2 text-secondary"></i>
+                        부산광역시 강서구 과학산단1로60번길 31,
+                        <span class="d-block ms-4">8동 301호 (부산테크노파크)</span>
+                    </li>
+                    <li class="mt-2">
+                        <i class="bi bi-shield-lock-fill me-2 text-secondary"></i>
+                        <strong class="text-light">개인정보 책임자</strong> : 이성희<br>
+                        <span class="ms-4">
+                            <a href="mailto:jjang8517@naver.com"
+                               class="text-muted text-decoration-none footer-link">jjang8517@naver.com</a>
+                        </span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 고객센터 -->
+            <div class="col-lg-3 col-md-6">
+                <h6 class="text-white mb-2 fw-bold">고객센터</h6>
+                <p class="text-warning fw-bold fs-5 mb-1">
+                    <i class="bi bi-telephone-fill me-2"></i>010-3565-9741
+                </p>
+                <p class="text-muted small mb-2">대표 이성희</p>
+                <ul class="list-unstyled small text-muted">
+                    <li class="mb-1">
+                        <i class="bi bi-wrench me-2 text-secondary"></i>
+                        <strong class="text-light">기술문의</strong><br>
+                        <span class="ms-4">010-2473-8303 (원종인)</span>
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-clock-fill me-2 text-secondary"></i>
+                        <strong class="text-light">업무시간</strong><br>
+                        <span class="ms-4">평일 오전 09:00 ~ 18:00</span><br>
+                        <span class="ms-4">(점심시간 12:00 ~ 13:00)</span><br>
+                        <span class="ms-4 text-warning">주말·공휴일 휴무</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 배송/반품 -->
+            <div class="col-lg-3 col-md-6">
+                <h6 class="text-white mb-2 fw-bold">배송 / 반품 안내</h6>
+                <ul class="list-unstyled small text-muted">
+                    <li class="mb-2">
+                        <i class="bi bi-truck me-2 text-secondary"></i>
+                        <strong class="text-light">배송조회</strong><br>
+                        <span class="ms-4">
+                            <a href="https://www.ilogen.com/web/personal/tkSearch"
+                               target="_blank" rel="noopener noreferrer"
+                               class="text-info text-decoration-none footer-link">
+                                <i class="bi bi-box-seam me-1"></i>로젠택배 배송조회 <i class="bi bi-box-arrow-up-right ms-1"></i>
+                            </a>
+                        </span><br>
+                        <span class="ms-4">로젠택배 1588-9988</span>
+                    </li>
+                    <li>
+                        <i class="bi bi-arrow-return-left me-2 text-secondary"></i>
+                        <strong class="text-light">반품 배송지</strong>
+                        <span class="d-block ms-4">부산광역시 강서구 과학산단1로60번길 31,</span>
+                        <span class="d-block ms-4">8동 301호 (부산테크노파크)</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 은행계좌 & 바로가기 -->
+            <div class="col-lg-3 col-md-6">
+                <h6 class="text-white mb-2 fw-bold">은행계좌 안내</h6>
+                <div class="bg-secondary bg-opacity-25 rounded p-3 mb-3">
+                    <p class="text-muted small mb-1">
+                        <i class="bi bi-bank me-2 text-secondary"></i>
+                        <strong class="text-light">IBK 기업은행</strong>
+                    </p>
+                    <p class="text-white fw-bold mb-1">542-030989-01-018</p>
+                    <p class="text-muted small mb-0">예금주 : 이성희 (라이트드론)</p>
+                </div>
+
+                <h6 class="text-white mb-2 fw-bold">바로가기</h6>
+                <ul class="list-unstyled small d-flex flex-wrap column-gap-3 row-gap-1 mb-3">
+                    <li><a th:href="@{/inquiry}"   class="text-muted text-decoration-none footer-link">· 견적문의</a></li>
+                    <li><a th:href="@{/support}"   class="text-muted text-decoration-none footer-link">· 자료실</a></li>
+                    <li><a th:href="@{/as}"        class="text-muted text-decoration-none footer-link">· A/S 안내</a></li>
+                    <li><a th:href="@{/notice}"    class="text-muted text-decoration-none footer-link">· 공지사항</a></li>
+                    <li><a th:href="@{/drone-law}" class="text-muted text-decoration-none footer-link">· 드론 비행 법규</a></li>
+                </ul>
+                <h6 class="text-white mb-2 fw-bold">약관 / 정책</h6>
+                <ul class="list-unstyled small d-flex flex-wrap column-gap-3 row-gap-1 mb-0">
+                    <li><a th:href="@{/privacy}"   class="text-muted text-decoration-none footer-link">· 개인정보처리방침</a></li>
+                    <li><a th:href="@{/refund}"    class="text-muted text-decoration-none footer-link">· 환불/반품 정책</a></li>
+                </ul>
+            </div>
+
+        </div>
+
+        <!-- 하단 저작권 -->
+        <div class="pt-2 mt-2 text-center">
+            <p class="text-muted small mb-0">
+                COPYRIGHT &copy; 2026 라이트드론. ALL RIGHTS RESERVED.
+            </p>
+        </div>
+
+    </div>
+</footer>
+
+<!-- ── 모바일 하단 탭바 (max-width:767px 에서만 노출) ──── -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="모바일 하단 메뉴">
+    <a th:href="@{/}" class="mbn-item" data-path="/">
+        <i class="bi bi-house-door"></i><span>홈</span>
+    </a>
+    <a th:href="@{/products}" class="mbn-item" data-path="/products">
+        <i class="bi bi-grid"></i><span>제품</span>
+    </a>
+    <a th:href="@{/inquiry}" class="mbn-item" data-path="/inquiry">
+        <i class="bi bi-file-earmark-text"></i><span>견적문의</span>
+    </a>
+    <a th:href="@{/cart}" class="mbn-item" data-path="/cart">
+        <span class="mbn-icon-wrap">
+            <i class="bi bi-cart3"></i>
+            <span class="mbn-badge" id="mbnCartBadge"
+                  th:style="${cartCount != null and cartCount > 0 ? 'display:inline-block' : 'display:none'}"
+                  th:text="${cartCount != null and cartCount > 0 ? cartCount : ''}"></span>
+        </span>
+        <span>장바구니</span>
+    </a>
+    <a th:href="@{/mypage}" class="mbn-item" data-path="/mypage">
+        <i class="bi bi-person"></i><span>마이</span>
+    </a>
+</nav>
+<script>
+(function () {
+    var path = location.pathname;
+    document.querySelectorAll('#mobileBottomNav .mbn-item').forEach(function (a) {
+        var p = a.getAttribute('data-path');
+        var on = (p === '/') ? (path === '/') : (path.indexOf(p) === 0);
+        if (on) a.classList.add('active');
+    });
+})();
+</script>
+
+<!-- ── 모바일 위/아래 스크롤 버튼 (≤767px, 우측 하단) ── -->
+<div class="mobile-scroll-btns" id="mobileScrollBtns">
+    <button type="button" class="msb-btn" aria-label="맨 위로"
+            onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="bi bi-chevron-up"></i></button>
+    <button type="button" class="msb-btn" aria-label="맨 아래로"
+            onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})"><i class="bi bi-chevron-down"></i></button>
+</div>
+
+<!-- ── FLOATING SIDEBAR ──────────────────────────────── -->
+<div id="floatingSidebarWrap" class="fsb-wrap">
+
+    <!-- 접기/펼치기 토글 핸들 -->
+    <button id="fsbToggle" class="fsb-toggle" type="button" title="퀵메뉴 접기" aria-label="퀵메뉴 접기/펼치기">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+
+<div id="floatingSidebar" class="floating-sidebar">
+
+    <!-- 최근 본 상품 -->
+    <div class="fsb-item">
+        <button class="fsb-btn" title="최근 본 상품" aria-label="최근 본 상품">
+            <i class="bi bi-clock-history"></i>
+        </button>
+        <div class="fsb-panel">
+            <div class="fsb-panel-title" style="display:flex;align-items:center;justify-content:space-between;">
+                <span><i class="bi bi-clock-history me-2 text-primary"></i>최근 본 상품</span>
+                <button onclick="clearRecentProducts()" type="button"
+                        style="background:none;border:none;font-size:0.72rem;color:#dc3545;cursor:pointer;padding:0;font-weight:600;">
+                    전체 지우기
+                </button>
+            </div>
+            <div class="fsb-panel-body" id="fsbRecentList">
+                <p class="text-muted text-center py-3 small mb-0">최근 본 상품이 없습니다.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 장바구니 미니뷰 -->
+    <div class="fsb-item">
+        <button class="fsb-btn fsb-cart-btn" title="장바구니" aria-label="장바구니">
+            <i class="bi bi-cart3"></i>
+            <span class="fsb-badge" id="fsbCartBadge"></span>
+        </button>
+        <div class="fsb-panel">
+            <div class="fsb-panel-title"><i class="bi bi-cart3 me-2 text-success"></i>장바구니</div>
+            <div class="fsb-panel-body" id="fsbCartList">
+                <p class="text-muted text-center py-3 small mb-0">로딩 중...</p>
+            </div>
+            <div class="fsb-panel-footer">
+                <a href="/cart" class="btn btn-sm btn-primary w-100">장바구니 전체 보기</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 알림 -->
+    <div class="fsb-item">
+        <button class="fsb-btn fsb-bell-btn" title="알림" aria-label="알림">
+            <i class="bi bi-bell-fill"></i>
+            <span class="fsb-badge" id="fsbNotisBadge"></span>
+        </button>
+        <div class="fsb-panel">
+            <div class="fsb-panel-title" style="display:flex;align-items:center;justify-content:space-between;">
+                <span><i class="bi bi-bell-fill me-2 text-warning"></i>알림</span>
+                <button onclick="clearAllNotifications()" type="button"
+                        style="background:none;border:none;font-size:0.72rem;color:#dc3545;cursor:pointer;padding:0;font-weight:600;">
+                    전체 지우기
+                </button>
+            </div>
+            <div class="fsb-panel-body" id="fsbNotisList">
+                <p class="text-muted text-center py-3 small mb-0">로딩 중...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 고객센터 -->
+    <div class="fsb-item">
+        <button class="fsb-btn" title="고객센터" aria-label="고객센터">
+            <i class="bi bi-headset"></i>
+        </button>
+        <div class="fsb-panel">
+            <div class="fsb-panel-title"><i class="bi bi-headset me-2 text-info"></i>고객센터</div>
+            <div class="fsb-panel-body">
+                <div class="mb-2">
+                    <div class="small text-muted mb-1">문의 전화</div>
+                    <div class="fw-bold text-primary">010-3565-9741</div>
+                    <div class="small text-muted">이성희 대표</div>
+                </div>
+                <hr class="my-2">
+                <div class="mb-2">
+                    <div class="small text-muted mb-1">기술 문의</div>
+                    <div class="fw-bold">010-2473-8303</div>
+                    <div class="small text-muted">원종인</div>
+                </div>
+                <hr class="my-2">
+                <div class="small text-muted">
+                    <i class="bi bi-clock me-1"></i>평일 09:00 ~ 18:00<br>
+                    <span class="text-warning">주말·공휴일 휴무</span>
+                </div>
+                <hr class="my-2">
+                <a href="/inquiry" class="btn btn-sm btn-outline-primary w-100">문의 작성</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 맨 위로 -->
+    <div class="fsb-item">
+        <button class="fsb-btn fsb-scroll-btn" id="fsbScrollTop" title="맨 위로" aria-label="맨 위로"
+                onclick="window.scrollTo({top:0,behavior:'smooth'})">
+            <i class="bi bi-chevron-up"></i>
+        </button>
+    </div>
+
+    <!-- 맨 아래로 -->
+    <div class="fsb-item">
+        <button class="fsb-btn fsb-scroll-btn" id="fsbScrollBottom" title="맨 아래로" aria-label="맨 아래로"
+                onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})">
+            <i class="bi bi-chevron-down"></i>
+        </button>
+    </div>
+
+    <!-- 실시간 채팅 (회원 전용) -->
+    <div class="fsb-item" sec:authorize="isAuthenticated()">
+        <button class="fsb-btn fsb-chat-btn" id="fsbChatBtn" title="실시간 상담" aria-label="실시간 상담">
+            <i class="bi bi-chat-dots-fill"></i>
+            <span class="fsb-badge" id="fsbChatBadge"></span>
+        </button>
+        <!-- 실시간 채팅 안내 버블 (X로 닫기, localStorage로 영구 숨김) -->
+        <div id="chatPromoBubble" class="chat-promo-bubble" style="display:none;">
+            <button type="button" class="chat-promo-close" id="chatPromoDismiss" title="닫기">
+                <i class="bi bi-x"></i>
+            </button>
+            <i class="bi bi-chat-dots-fill chat-promo-icon"></i>
+            <div>
+                <div class="chat-promo-title">실시간 채팅 상담</div>
+                <div class="chat-promo-desc">바로 연결해 보세요!</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</div><!-- /#floatingSidebarWrap -->
+
+<!-- 관리자 여부 플래그 (JS에서 읽음) -->
+<span id="chatIsAdmin" style="display:none" sec:authorize="hasRole('ADMIN')">1</span>
+
+<!-- ── 실시간 채팅 위젯 ─────────────────────────────── -->
+<div id="chatWidget" class="chat-widget" sec:authorize="isAuthenticated()" style="display:none;">
+    <div class="chat-header">
+        <span class="chat-title" id="chatTitle"><i class="bi bi-headset me-2"></i>실시간 상담</span>
+        <div class="chat-header-actions">
+            <button type="button" class="chat-hbtn" id="chatCloseRoomBtn" title="상담 종료" style="display:none;">
+                <i class="bi bi-x-circle"></i>
+            </button>
+            <button type="button" class="chat-hbtn" id="chatMinBtn" title="닫기">
+                <i class="bi bi-dash-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 관리자: 채팅방 목록 -->
+    <div class="chat-roomlist" id="chatRoomList" style="display:none;">
+        <div class="chat-roomlist-head">
+            <span><i class="bi bi-list-ul me-1"></i>상담 목록</span>
+            <button type="button" class="chat-refresh" id="chatRefreshBtn" title="새로고침"><i class="bi bi-arrow-clockwise"></i></button>
+        </div>
+        <div class="chat-roomlist-body" id="chatRoomListBody">
+            <p class="text-muted text-center small py-3 mb-0">상담 대기 중인 채팅이 없습니다.</p>
+        </div>
+    </div>
+
+    <!-- 대화 영역 -->
+    <div class="chat-conversation" id="chatConversation">
+        <div class="chat-body" id="chatBody"></div>
+        <div class="chat-input-wrap">
+            <button type="button" class="chat-back" id="chatBackBtn" title="목록으로" style="display:none;"><i class="bi bi-chevron-left"></i></button>
+            <input type="text" id="chatInput" class="chat-input" placeholder="메시지를 입력하세요..." maxlength="2000" autocomplete="off" disabled>
+            <button type="button" id="chatSendBtn" class="chat-send" disabled><i class="bi bi-send-fill"></i></button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ── Floating Sidebar ── */
+.fsb-wrap {
+    position: fixed;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 950;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    /* 히어로 이미지 위(스크롤 최상단)에서는 숨겨 겹침을 방지하고,
+       아래로 스크롤하면 부드럽게 떠오르게 한다 */
+    transition: opacity .3s ease, transform .3s ease;
+}
+/* 하나의 글래스 도크로 묶어 세련되게 — 항상 노출 */
+.floating-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 5px;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid rgba(15, 37, 71, 0.08);
+    border-radius: 22px;
+    box-shadow: 0 14px 38px -12px rgba(15, 37, 71, 0.24),
+                0 2px 8px rgba(15, 37, 71, 0.06);
+    transition: transform .34s cubic-bezier(.22,.61,.36,1), opacity .28s ease;
+}
+/* 접힘 상태: 스택을 오른쪽 화면 밖으로 밀어넣고 토글 핸들만 노출 */
+.fsb-wrap.collapsed .floating-sidebar {
+    transform: translateX(135%);
+    opacity: 0;
+    pointer-events: none;
+}
+/* 접기/펼치기 토글 핸들 — 글래스 톤으로 통일 */
+.fsb-toggle {
+    width: 40px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid rgba(15, 37, 71, 0.08);
+    border-radius: 14px;
+    color: var(--primary, #1a4fd8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    box-shadow: 0 8px 20px -8px rgba(15, 37, 71, 0.25);
+    transition: background .22s, color .22s, box-shadow .22s;
+}
+.fsb-toggle:hover {
+    background: var(--primary, #1a4fd8);
+    color: #fff;
+    box-shadow: 0 10px 24px -8px rgba(26, 79, 216, 0.5);
+}
+.fsb-toggle i { transition: transform .3s ease; font-size: 0.95rem; }
+.fsb-wrap.collapsed .fsb-toggle i { transform: rotate(180deg); }
+
+.fsb-item {
+    position: relative;
+}
+
+/* hover 유지용 투명 브리지:
+   버튼(40px)과 패널(right:48px) 사이 약 8px 빈 틈을 메운다.
+   이 틈을 지나는 동안 .fsb-item:hover 가 끊겨 패널이 사라지면서
+   "마우스 올려서 나온 메뉴를 누르려 하면 사라지는" 문제가 발생했다.
+   패널에는 overflow:hidden 이 있어 브리지를 붙일 수 없으므로 .fsb-item 에 깐다. */
+.fsb-item::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 38px;      /* 버튼 왼쪽 가장자리부터 */
+    width: 12px;      /* 패널 오른쪽 가장자리(48px)까지 연속되도록 틈을 덮음 */
+    /* 투명 영역(시각적으로 안 보임) — 포인터가 버튼→패널로 이동하는 경로를 끊김 없이 연결 */
+    pointer-events: none;   /* 평소엔 비활성: 버튼 왼쪽 빈 틈이 다른 클릭을 가로채지 않음 */
+}
+/* 항목에 마우스를 올린 동안에만 다리를 활성화 → hover 가 끊기지 않게 한다 */
+.fsb-item:hover::after { pointer-events: auto; }
+
+.fsb-btn {
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: none;
+    border-radius: 12px;
+    color: #46546e;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+    position: relative;
+    padding: 0;
+}
+
+.fsb-btn:hover,
+.fsb-item:hover .fsb-btn {
+    background: var(--primary-light, #e8f0fe);
+    color: var(--primary, #1a4fd8);
+    transform: translateY(-1px);
+}
+
+.fsb-scroll-btn:hover {
+    background: #eef1f6 !important;
+    color: #46546e !important;
+}
+
+/* 실시간 상담은 메인 CTA로 채워서 강조 */
+.fsb-chat-btn {
+    background: var(--primary, #1a4fd8);
+    color: #fff;
+    box-shadow: 0 6px 16px -6px rgba(26, 79, 216, 0.55);
+}
+.fsb-chat-btn:hover,
+.fsb-item:hover .fsb-chat-btn {
+    background: var(--primary-dark, #1040bc);
+    color: #fff;
+}
+
+.fsb-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #dc3545;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    min-width: 15px;
+    height: 15px;
+    border-radius: 8px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    line-height: 1;
+}
+
+.fsb-panel {
+    position: absolute;
+    right: 48px;
+    top: 50%;            /* 아이콘 기준 세로 중앙 — 위로만 뻗어 잘리던 문제 해결 */
+    width: 260px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: -6px 6px 24px rgba(0, 0, 0, 0.14);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate(8px, -50%);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    max-height: 380px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    z-index: 951;
+}
+
+.fsb-item:hover .fsb-panel {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate(0, -50%);
+}
+
+.fsb-panel-title {
+    padding: 10px 14px 9px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    color: #333;
+    flex-shrink: 0;
+    background: rgba(248, 249, 250, 0.8);
+    border-radius: 12px 12px 0 0;
+}
+
+.fsb-panel-body {
+    padding: 8px 12px;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    font-size: 0.8rem;
+}
+
+.fsb-panel-footer {
+    padding: 8px 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+    background: rgba(248, 249, 250, 0.8);
+    border-radius: 0 0 12px 12px;
+}
+
+/* 최근 본 상품 아이템 */
+.fsb-recent-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    text-decoration: none;
+    color: inherit;
+}
+.fsb-recent-item:last-child { border-bottom: none; }
+.fsb-recent-item:hover { background: rgba(13,110,253,0.05); border-radius: 6px; padding-left: 4px; }
+.fsb-recent-thumb {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+    background: #f0f0f0;
+}
+.fsb-recent-thumb-placeholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.fsb-recent-name {
+    font-size: 0.76rem;
+    color: #333;
+    line-height: 1.3;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+.fsb-recent-price {
+    font-size: 0.72rem;
+    color: #0d6efd;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* 장바구니 삭제 버튼 */
+.fsb-cart-remove-btn {
+    background: none;
+    border: none;
+    color: #aaa;
+    padding: 2px 4px;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    border-radius: 4px;
+    transition: color .15s, background .15s;
+}
+.fsb-cart-remove-btn:hover {
+    color: #dc3545;
+    background: #fff0f0;
+}
+
+/* 장바구니 아이템 */
+.fsb-cart-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.fsb-cart-item:last-child { border-bottom: none; }
+
+/* 공지사항 아이템 */
+.fsb-notice-item {
+    display: block;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    text-decoration: none;
+    color: #333;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.fsb-notice-item:last-child { border-bottom: none; }
+.fsb-notice-item:hover { color: #0d6efd; }
+
+/* 모바일에서 사이드바 숨김 */
+@media (max-width: 767px) {
+    .fsb-wrap { display: none; }
+}
+
+/* ── 모바일 하단 탭바 ── */
+.mobile-bottom-nav { display: none; }
+@media (max-width: 767px) {
+    .mobile-bottom-nav {
+        display: flex;
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        height: 58px;
+        background: #fff;
+        border-top: 1px solid #eceef1;
+        box-shadow: 0 -2px 14px rgba(0,0,0,0.07);
+        z-index: 1040;
+        padding-bottom: env(safe-area-inset-bottom); /* iPhone 하단 노치 대응 */
+    }
+    /* 탭바에 가려지지 않도록 본문 하단 여백 확보 */
+    body { padding-bottom: calc(58px + env(safe-area-inset-bottom)); }
+}
+.mbn-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    text-decoration: none;
+    color: #8a9099;
+    font-size: 0.68rem;
+    font-weight: 500;
+    transition: color .15s;
+    -webkit-tap-highlight-color: transparent;
+}
+.mbn-item i { font-size: 1.28rem; line-height: 1; }
+.mbn-item.active { color: var(--bs-primary); }
+.mbn-item:active { color: var(--bs-primary); }
+.mbn-icon-wrap { position: relative; display: inline-block; }
+.mbn-badge {
+    position: absolute;
+    top: -5px; right: -10px;
+    min-width: 16px; height: 16px;
+    padding: 0 4px;
+    background: #dc3545;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+    border-radius: 9px;
+}
+
+/* ── 모바일 위/아래 스크롤 버튼 ── */
+.mobile-scroll-btns { display: none; }
+@media (max-width: 767px) {
+    .mobile-scroll-btns {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        position: fixed;
+        right: 12px;
+        bottom: calc(58px + env(safe-area-inset-bottom) + 12px); /* 하단 탭바 위 */
+        z-index: 1035;
+    }
+    .mobile-scroll-btns .msb-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 1px solid #e3e6ea;
+        background: rgba(255,255,255,0.96);
+        color: #41474f;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.16);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .mobile-scroll-btns .msb-btn:active {
+        background: var(--bs-primary);
+        color: #fff;
+        border-color: var(--bs-primary);
+    }
+}
+
+/* ── 실시간 채팅 안내 버블 ── */
+.chat-promo-bubble {
+    position: absolute;
+    right: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #fff;
+    border: 1px solid rgba(13,110,253,0.22);
+    border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.13);
+    padding: 9px 14px 9px 11px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    white-space: nowrap;
+    z-index: 951;
+    animation: promoPop 0.25s ease;
+}
+@keyframes promoPop {
+    from { opacity:0; transform: translateY(-50%) translateX(8px); }
+    to   { opacity:1; transform: translateY(-50%) translateX(0); }
+}
+/* 오른쪽 화살표 */
+.chat-promo-bubble::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-right: none;
+    border-left-color: #fff;
+}
+.chat-promo-bubble::before {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 7px solid transparent;
+    border-right: none;
+    border-left-color: rgba(13,110,253,0.22);
+}
+.chat-promo-close {
+    position: absolute;
+    top: 3px; right: 4px;
+    background: none; border: none;
+    color: #aaa; font-size: 0.85rem;
+    cursor: pointer; padding: 1px 4px; line-height: 1;
+}
+.chat-promo-close:hover { color: #333; }
+.chat-promo-icon { font-size: 1.2rem; color: #0d6efd; flex-shrink: 0; }
+.chat-promo-title { font-weight: 700; font-size: 0.8rem; color: #222; }
+.chat-promo-desc  { font-size: 0.72rem; color: #888; margin-top: 1px; }
+
+/* ── 실시간 채팅 위젯 ── */
+/* 배경색은 .fsb-chat-btn 정의(브랜드 메인색 var(--primary, #1a4fd8))를 그대로 사용 —
+   부트스트랩 기본 파랑(#0d6efd)을 !important 로 덮어쓰던 비일관 규칙 제거 */
+.fsb-chat-btn .fsb-badge { display:none; }
+
+.chat-widget {
+    position: fixed;
+    right: 76px;
+    bottom: 24px;
+    width: 340px;
+    height: 520px;
+    max-height: calc(100vh - 48px);
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+    z-index: 9990;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: chatPop 0.18s ease;
+}
+@keyframes chatPop { from { opacity:0; transform: translateY(12px) scale(0.98);} to {opacity:1; transform:none;} }
+
+.chat-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, #0d6efd, #0a58ca);
+    color: #fff; flex-shrink: 0;
+}
+.chat-title { font-weight: 700; font-size: 0.92rem; }
+.chat-header-actions { display:flex; gap:4px; }
+.chat-hbtn {
+    background: rgba(255,255,255,0.18); border: none; color:#fff;
+    width: 28px; height: 28px; border-radius: 8px; cursor: pointer;
+    display:flex; align-items:center; justify-content:center; font-size:0.9rem;
+    transition: background 0.15s;
+}
+.chat-hbtn:hover { background: rgba(255,255,255,0.35); }
+
+/* 관리자 채팅방 목록 */
+.chat-roomlist { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
+.chat-roomlist-head {
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 8px 14px; font-size:0.78rem; font-weight:700; color:#555;
+    border-bottom:1px solid rgba(0,0,0,0.06); background: rgba(248,249,250,0.7); flex-shrink:0;
+}
+.chat-refresh { background:none; border:none; color:#0d6efd; cursor:pointer; font-size:0.9rem; padding:0; }
+.chat-roomlist-body { flex:1 1 auto; overflow-y:auto; padding: 6px; }
+.chat-room-item {
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding: 10px 12px; border-radius: 10px; cursor:pointer;
+    border:1px solid transparent; transition: background 0.15s;
+}
+.chat-room-item:hover { background: rgba(13,110,253,0.06); }
+.chat-room-item.locked { cursor:not-allowed; opacity:0.6; }
+.chat-room-item.locked:hover { background:transparent; }
+.chat-room-name { font-weight:700; font-size:0.85rem; color:#222; }
+.chat-room-meta { font-size:0.72rem; color:#888; }
+.chat-room-tag { font-size:0.68rem; font-weight:700; padding:2px 7px; border-radius:20px; white-space:nowrap; }
+.chat-room-tag.waiting { background:#fff3cd; color:#997404; }
+.chat-room-tag.mine { background:#d1e7dd; color:#0f5132; }
+.chat-room-tag.locked { background:#f8d7da; color:#842029; }
+
+/* 대화 영역 */
+.chat-conversation { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
+.chat-body {
+    flex:1 1 auto; overflow-y:auto; padding: 14px 12px;
+    display:flex; flex-direction:column; gap:8px;
+    background: rgba(247,249,252,0.6);
+}
+.chat-msg { max-width: 78%; padding: 8px 12px; border-radius: 14px; font-size:0.85rem; line-height:1.4; word-break:break-word; position:relative; }
+.chat-msg .chat-msg-time { display:block; font-size:0.64rem; opacity:0.6; margin-top:3px; }
+.chat-msg.mine { align-self:flex-end; background:#0d6efd; color:#fff; border-bottom-right-radius:4px; }
+.chat-msg.theirs { align-self:flex-start; background:#fff; color:#222; border:1px solid rgba(0,0,0,0.08); border-bottom-left-radius:4px; }
+.chat-msg .chat-msg-name { display:block; font-size:0.68rem; font-weight:700; opacity:0.85; margin-bottom:2px; }
+.chat-sys { align-self:center; font-size:0.72rem; color:#888; background:rgba(0,0,0,0.05); padding:4px 10px; border-radius:20px; }
+
+.chat-input-wrap {
+    display:flex; align-items:center; gap:6px; padding: 10px;
+    border-top:1px solid rgba(0,0,0,0.08); background:#fff; flex-shrink:0;
+}
+.chat-back { background:none; border:none; color:#666; font-size:1.1rem; cursor:pointer; padding:0 2px; }
+.chat-input {
+    flex:1 1 auto; border:1px solid rgba(0,0,0,0.15); border-radius:20px;
+    padding: 8px 14px; font-size:0.85rem; outline:none;
+}
+.chat-input:focus { border-color:#0d6efd; }
+.chat-input:disabled { background:#f1f3f5; }
+.chat-send {
+    width:38px; height:38px; border-radius:50%; border:none; flex-shrink:0;
+    background:#0d6efd; color:#fff; cursor:pointer; font-size:0.9rem;
+    display:flex; align-items:center; justify-content:center; transition: background 0.15s;
+}
+.chat-send:hover:not(:disabled) { background:#0a58ca; }
+.chat-send:disabled { background:#adb5bd; cursor:not-allowed; }
+
+@media (max-width: 767px) {
+    .chat-widget { right: 12px; left: 12px; width: auto; bottom: 12px; height: 70vh; }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/main.js}"></script>
+<script>
+(function () {
+    var toggle   = document.getElementById('megaMenuToggle');
+    var panel    = document.getElementById('megaMenuPanel');
+    var overlay  = document.getElementById('megaMenuOverlay');
+    var closeBtn = document.getElementById('megaMenuClose');
+    if (!toggle || !panel) return;
+
+    var megaLi = toggle.closest('.has-mega');
+
+    // 카테고리 탭 관련 요소
+    var catTabs   = panel.querySelectorAll('.mega-cat-tab[data-cat]');
+    var subPanels = panel.querySelectorAll('.mega-sub-panel');
+    var allView   = document.getElementById('megaAllView');
+
+    function resetCatState() {
+        catTabs.forEach(function(t) { t.classList.remove('cat-active'); });
+        subPanels.forEach(function(p) { p.classList.remove('active'); });
+        if (allView) allView.classList.remove('hidden'); // 전체보기 그리드 표시
+    }
+
+    function syncMenuActive() {
+        var path = window.location.pathname;
+        var params = new URLSearchParams(window.location.search);
+        var currentCategory = params.get('category');
+
+        document.querySelectorAll('.menu-link').forEach(function(link) {
+            link.classList.remove('active');
+            var href = link.getAttribute('href');
+            if (!href) return;
+
+            try {
+                var url = new URL(href, window.location.origin);
+                var linkPath = url.pathname;
+                var linkCategory = url.searchParams.get('category');
+
+                if (path === '/products') {
+                    if (!currentCategory && linkPath === '/products' && !linkCategory) {
+                        link.classList.add('active');
+                    } else if (currentCategory && linkCategory === currentCategory) {
+                        link.classList.add('active');
+                    }
+                    return;
+                }
+
+                if (path === linkPath && linkPath !== '/products') {
+                    link.classList.add('active');
+                }
+            } catch (e) {
+                if (href === '/' && path === '/') {
+                    link.classList.add('active');
+                }
+            }
+        });
+    }
+
+    function openMega() {
+        panel.style.display   = 'block';
+        overlay.style.display = 'block';
+        toggle.classList.add('mega-active');
+        document.querySelectorAll('.menu-link.active').forEach(function(el) { el.classList.remove('active'); });
+    }
+    function closeMega() {
+        panel.style.display   = 'none';
+        overlay.style.display = 'none';
+        toggle.classList.remove('mega-active');
+        document.body.style.overflow = '';
+        resetCatState();
+        syncMenuActive();
+    }
+    // 제품보기 클릭으로 메가메뉴 토글
+    toggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (panel.style.display === 'block') {
+            closeMega();
+        } else {
+            openMega();
+        }
+    });
+    syncMenuActive();
+
+    // 카테고리 탭 클릭 → 전체보기 그리드 숨기고 개별 서브패널 표시
+    catTabs.forEach(function(tab) {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            var cat = this.getAttribute('data-cat');
+            catTabs.forEach(function(t) { t.classList.toggle('cat-active', t.getAttribute('data-cat') === cat); });
+            subPanels.forEach(function(p) { p.classList.toggle('active', p.getAttribute('data-cat') === cat); });
+            if (allView) allView.classList.add('hidden'); // 전체보기 그리드 숨김
+        });
+    });
+    // 전체보기 탭 클릭 → 상품 전체 페이지(/products)로 이동 (링크 기본 동작 유지)
+
+    // X 버튼·오버레이 클릭·ESC
+    closeBtn.addEventListener('click', closeMega);
+    overlay.addEventListener('click', closeMega);
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeMega();
+    });
+    window.addEventListener('pageshow', function(e) {
+        if (e.persisted) closeMega();
+    });
+    if (panel.style.display === 'none' || panel.style.display === '') {
+        document.body.style.overflow = '';
+    }
+})();
+</script>
+
+<script>
+/* ── Floating Sidebar Logic ── */
+(function() {
+
+    // ── 퀵메뉴 접기/펼치기 ──
+    (function () {
+        var wrap   = document.getElementById('floatingSidebarWrap');
+        var toggle = document.getElementById('fsbToggle');
+        if (!wrap || !toggle) return;
+        function setCollapsed(c) {
+            wrap.classList.toggle('collapsed', c);
+            toggle.title = c ? '퀵메뉴 펼치기' : '퀵메뉴 접기';
+            try { localStorage.setItem('fsbCollapsed', c ? '1' : '0'); } catch (e) {}
+        }
+        toggle.addEventListener('click', function () {
+            setCollapsed(!wrap.classList.contains('collapsed'));
+        });
+        var collapsed = false;
+        try { collapsed = localStorage.getItem('fsbCollapsed') === '1'; } catch (e) {}
+        setCollapsed(collapsed); // 기본값: 펼침(노출)
+
+        // 항상 노출 — 이전 스크롤 게이팅 제거 (도크가 패널을 가리지 않게 디자인 변경됨)
+        wrap.classList.add('is-visible');
+    })();
+
+    // ── 최근 본 상품 (localStorage) ──
+    function clearRecentProducts() {
+        try { localStorage.removeItem('ld_recent_products'); } catch(e) {}
+        loadRecentProducts();
+    }
+
+    function loadRecentProducts() {
+        var container = document.getElementById('fsbRecentList');
+        if (!container) return;
+        try {
+            var items = JSON.parse(localStorage.getItem('ld_recent_products') || '[]');
+            if (!items.length) {
+                container.innerHTML = '<p class="text-muted text-center py-3 small mb-0">최근 본 상품이 없습니다.</p>';
+                return;
+            }
+            container.innerHTML = items.map(function(p) {
+                var thumb = p.imageUrl
+                    ? '<img src="' + p.imageUrl + '" class="fsb-recent-thumb" alt="' + escHtml(p.name) + '" onerror="this.style.display=\'none\'">'
+                    : '<div class="fsb-recent-thumb-placeholder"><i class="bi bi-image"></i></div>';
+                var priceStr = p.priceOnRequest ? '가격문의' : (p.price ? Number(p.price).toLocaleString() + '원' : '');
+                return '<a href="/products/' + p.id + '" class="fsb-recent-item">'
+                    + thumb
+                    + '<div class="flex-grow-1 overflow-hidden">'
+                    + '<div class="fsb-recent-name">' + escHtml(p.name) + '</div>'
+                    + (priceStr ? '<div class="fsb-recent-price">' + escHtml(priceStr) + '</div>' : '')
+                    + '</div></a>';
+            }).join('');
+        } catch(e) {
+            container.innerHTML = '<p class="text-muted text-center py-3 small mb-0">오류가 발생했습니다.</p>';
+        }
+    }
+
+    // ── 장바구니 미니뷰 ──
+    function loadCartItems() {
+        var container = document.getElementById('fsbCartList');
+        var badge = document.getElementById('fsbCartBadge');
+        if (!container) return;
+        var mbnBadge = document.getElementById('mbnCartBadge');
+        fetch('/api/cart/items', {credentials: 'same-origin'})
+            .then(function(r) { return r.json(); })
+            .then(function(items) {
+                if (!items.length) {
+                    container.innerHTML = '<p class="text-muted text-center py-3 small mb-0">장바구니가 비어있습니다.</p>';
+                    if (badge) { badge.style.display = 'none'; }
+                    if (mbnBadge) { mbnBadge.style.display = 'none'; }
+                    return;
+                }
+                if (badge) {
+                    badge.textContent = items.length > 9 ? '9+' : items.length;
+                    badge.style.display = 'flex';
+                }
+                if (mbnBadge) {
+                    mbnBadge.textContent = items.length > 9 ? '9+' : items.length;
+                    mbnBadge.style.display = 'inline-block';
+                }
+                container.innerHTML = items.slice(0, 5).map(function(item) {
+                    var thumb = item.imageUrl
+                        ? '<img src="' + item.imageUrl + '" class="fsb-recent-thumb" alt="" onerror="this.style.display=\'none\'">'
+                        : '<div class="fsb-recent-thumb-placeholder"><i class="bi bi-image"></i></div>';
+                    var priceStr = item.priceOnRequest ? '가격문의' : (Number(item.price).toLocaleString() + '원');
+                    var optHtml = item.optionName
+                        ? '<div class="text-muted text-truncate" style="font-size:0.7rem;">' + escHtml(item.optionName) + '</div>'
+                        : '';
+                    return '<div class="fsb-cart-item" data-cart-item-id="' + item.id + '">'
+                        + '<a href="/products/' + item.productId + '">' + thumb + '</a>'
+                        + '<div class="flex-grow-1 overflow-hidden">'
+                        + '<div class="fsb-recent-name"><a href="/products/' + item.productId + '" class="text-decoration-none text-dark">' + escHtml(item.name) + '</a></div>'
+                        + optHtml
+                        + '<div class="d-flex justify-content-between align-items-center">'
+                        + '<span class="fsb-recent-price">' + escHtml(priceStr) + '</span>'
+                        + '<span class="text-muted" style="font-size:0.72rem;">×' + item.quantity + '</span>'
+                        + '</div></div>'
+                        + '<button class="fsb-cart-remove-btn" data-id="' + item.id + '" title="삭제">'
+                        + '<i class="bi bi-x"></i></button>'
+                        + '</div>';
+                }).join('');
+                if (items.length > 5) {
+                    container.innerHTML += '<p class="text-muted text-center small mt-1 mb-0">외 ' + (items.length - 5) + '개</p>';
+                }
+
+                // 삭제 버튼 이벤트
+                container.querySelectorAll('.fsb-cart-remove-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var cartItemId = this.getAttribute('data-id');
+                        var csrfMeta = document.querySelector('meta[name="_csrf"]');
+                        var csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+                        var headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+                        if (csrfMeta && csrfHeader) {
+                            headers[csrfHeader.content] = csrfMeta.content;
+                        }
+                        fetch('/api/cart/remove', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: headers,
+                            body: 'cartItemId=' + cartItemId
+                        }).then(function(r) { return r.json(); })
+                          .then(function(data) {
+                              if (data.success) {
+                                  loadCartItems();
+                                  // 네비바 카트 뱃지 업데이트
+                                  var navBadge = document.querySelector('.cart-count-badge');
+                                  if (navBadge) {
+                                      if (data.cartCount > 0) {
+                                          navBadge.textContent = data.cartCount;
+                                          navBadge.style.display = '';
+                                      } else {
+                                          navBadge.style.display = 'none';
+                                      }
+                                  }
+                              }
+                          });
+                    });
+                });
+            })
+            .catch(function() {
+                container.innerHTML = '<p class="text-muted text-center py-3 small mb-0">로그인이 필요합니다.</p>';
+                if (badge) { badge.style.display = 'none'; }
+            });
+    }
+
+    // ── 공지사항 ──
+    function loadNotices() {
+        var container = document.getElementById('fsbNoticeList');
+        if (!container) return;
+        fetch('/api/notices/recent', {credentials: 'same-origin'})
+            .then(function(r) { return r.json(); })
+            .then(function(items) {
+                if (!items.length) {
+                    container.innerHTML = '<p class="text-muted text-center py-3 small mb-0">등록된 공지가 없습니다.</p>';
+                    return;
+                }
+                container.innerHTML = items.map(function(n) {
+                    return '<a href="/notice/' + n.id + '" class="fsb-notice-item">'
+                        + '<i class="bi bi-dot text-warning"></i>' + escHtml(n.title)
+                        + '</a>';
+                }).join('');
+            })
+            .catch(function() {
+                container.innerHTML = '<p class="text-muted text-center py-3 small mb-0">불러오기 실패</p>';
+            });
+    }
+
+    // ── 알림 ──
+    function getDismissedNotis() {
+        try { return JSON.parse(localStorage.getItem('ld_dismissed_notis') || '[]'); } catch(e) { return []; }
+    }
+    function setDismissedNotis(arr) {
+        try { localStorage.setItem('ld_dismissed_notis', JSON.stringify(arr)); } catch(e) {}
+    }
+
+    function renderNotifications(items) {
+        var container = document.getElementById('fsbNotisList');
+        var badge = document.getElementById('fsbNotisBadge');
+        if (!container) return;
+        var dismissed = getDismissedNotis();
+        var visible = items.filter(function(n) { return dismissed.indexOf(n.link) === -1; });
+
+        if (!visible.length) {
+            container.innerHTML = '<p class="text-muted text-center py-3 small mb-0">새 알림이 없습니다.</p>';
+            if (badge) badge.style.display = 'none';
+            return;
+        }
+        if (badge) {
+            badge.textContent = visible.length > 9 ? '9+' : visible.length;
+            badge.style.display = 'flex';
+        }
+        container.innerHTML = visible.map(function(n) {
+            return '<div style="display:flex;align-items:flex-start;gap:2px;border-bottom:1px solid rgba(0,0,0,0.06);padding:5px 0;">'
+                + '<a href="' + n.link + '" style="flex:1;min-width:0;text-decoration:none;color:inherit;">'
+                + '<div style="font-size:0.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
+                + '<i class="bi bi-dot text-primary"></i>' + escHtml(n.message) + '</div>'
+                + '<div class="text-muted" style="font-size:0.68rem;padding-left:12px;">' + escHtml(n.createdAt) + '</div>'
+                + '</a>'
+                + '<button type="button" onclick="dismissNotification(this)" data-link="' + escHtml(n.link) + '"'
+                + ' title="알림 지우기"'
+                + ' style="background:none;border:none;padding:2px 4px;color:#aaa;cursor:pointer;font-size:0.85rem;flex-shrink:0;line-height:1;">'
+                + '<i class="bi bi-x"></i></button>'
+                + '</div>';
+        }).join('');
+    }
+
+    var _cachedNotis = [];
+
+    function loadNotifications() {
+        var container = document.getElementById('fsbNotisList');
+        var badge = document.getElementById('fsbNotisBadge');
+        if (!container) return;
+        fetch('/api/notifications/my', {credentials:'same-origin'})
+            .then(function(r) { return r.json(); })
+            .then(function(items) {
+                _cachedNotis = items;
+                renderNotifications(items);
+            })
+            .catch(function() {
+                container.innerHTML = '<p class="text-muted text-center py-3 small mb-0">로그인이 필요합니다.</p>';
+                if (badge) badge.style.display = 'none';
+            });
+    }
+
+    function dismissNotification(btn) {
+        var link = btn.getAttribute('data-link');
+        var dismissed = getDismissedNotis();
+        if (dismissed.indexOf(link) === -1) dismissed.push(link);
+        setDismissedNotis(dismissed);
+        renderNotifications(_cachedNotis);
+    }
+
+    function clearAllNotifications() {
+        var dismissed = getDismissedNotis();
+        _cachedNotis.forEach(function(n) {
+            if (dismissed.indexOf(n.link) === -1) dismissed.push(n.link);
+        });
+        setDismissedNotis(dismissed);
+        renderNotifications(_cachedNotis);
+    }
+
+    /* onclick에서 호출할 수 있도록 전역으로 노출 */
+    window.dismissNotification   = dismissNotification;
+    window.clearAllNotifications = clearAllNotifications;
+    window.clearRecentProducts   = clearRecentProducts;
+
+    function escHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    // ── 초기 로드 ──
+    loadRecentProducts();
+    loadCartItems();
+    loadNotices();
+    loadNotifications();
+
+    // 외부(다른 페이지 스크립트)에서 장바구니 갱신 가능하도록 전역 노출
+    window.refreshCartSidebar = loadCartItems;
+
+})();
+</script>
+
+<script>
+/* ── 네비바 스크롤 축소 ── */
+(function () {
+    var header = document.getElementById('siteHeader');
+    if (!header) return;
+
+    function onScroll() {
+        if (window.scrollY > 60) {
+            if (!header.classList.contains('shrunk')) {
+                header.classList.add('shrunk');
+                document.body.classList.add('nav-shrunk');
+            }
+        } else {
+            if (header.classList.contains('shrunk')) {
+                header.classList.remove('shrunk');
+                document.body.classList.remove('nav-shrunk');
+            }
+        }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll(); // 페이지 로드 시 현재 위치 반영
+})();
+</script>
+
+<script>
+/* ── 네비바 사용자 드롭다운: 클릭 → hover로 전환 ── */
+(function () {
+    var dd = document.querySelector('.header-top .dropdown');
+    if (!dd) return;
+    var bsDropdown = null;
+    var closeTimer = null;
+    var desktopHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    function getBs() {
+        if (!bsDropdown) bsDropdown = bootstrap.Dropdown.getOrCreateInstance(dd.querySelector('[data-bs-toggle="dropdown"]'));
+        return bsDropdown;
+    }
+    if (desktopHover) {
+        dd.addEventListener('mouseenter', function () {
+            if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+            getBs().show();
+        });
+        dd.addEventListener('mouseleave', function () {
+            closeTimer = setTimeout(function () { getBs().hide(); }, 120);
+        });
+    } else {
+        document.addEventListener('click', function (e) {
+            if (!dd.contains(e.target)) {
+                getBs().hide();
+            }
+        });
+    }
+})();
+
+/* ── 로그인 링크에 현재 페이지 redirect 파라미터 자동 추가 ── */
+(function () {
+    var loginLink = document.getElementById('navLoginLink');
+    if (!loginLink) return;
+    var currentPath = window.location.pathname + window.location.search;
+    if (currentPath && currentPath !== '/auth/login') {
+        loginLink.href = '/auth/login?redirect=' + encodeURIComponent(currentPath);
+    }
+})();
+</script>
+
+<script>
+/* ── 실시간 채팅 안내 버블 dismiss ── */
+(function () {
+    var bubble  = document.getElementById('chatPromoBubble');
+    var dismiss = document.getElementById('chatPromoDismiss');
+    if (!bubble || !dismiss) return;
+    // sessionStorage: 탭(세션) 내에서만 dismiss 유지 → 새 탭/브라우저 재시작 시 다시 표시
+    var SS_KEY = 'ld_chat_promo_dismissed';
+    if (!sessionStorage.getItem(SS_KEY)) {
+        setTimeout(function () { bubble.style.display = 'flex'; }, 1800);
+    }
+    dismiss.addEventListener('click', function () {
+        bubble.style.display = 'none';
+        sessionStorage.setItem(SS_KEY, '1');
+    });
+    // 채팅 버튼 클릭 시에도 자동 닫힘
+    var chatBtn = document.getElementById('fsbChatBtn');
+    if (chatBtn) {
+        chatBtn.addEventListener('click', function () {
+            bubble.style.display = 'none';
+            sessionStorage.setItem(SS_KEY, '1');
+        });
+    }
+})();
+</script>
+
+<!-- ── 실시간 채팅 ─────────────────────────────────── -->
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script>
+(function () {
+    var btn    = document.getElementById('fsbChatBtn');
+    var widget = document.getElementById('chatWidget');
+    if (!btn || !widget) return;
+
+    var isAdmin   = !!document.getElementById('chatIsAdmin');
+    var myRole    = isAdmin ? 'ADMIN' : 'USER';
+    var csrfToken = (document.querySelector('meta[name="_csrf"]') || {}).content;
+    var csrfHeader= (document.querySelector('meta[name="_csrf_header"]') || {}).content;
+
+    var roomListEl   = document.getElementById('chatRoomList');
+    var roomListBody = document.getElementById('chatRoomListBody');
+    var convoEl      = document.getElementById('chatConversation');
+    var bodyEl       = document.getElementById('chatBody');
+    var inputEl      = document.getElementById('chatInput');
+    var sendBtn      = document.getElementById('chatSendBtn');
+    var backBtn      = document.getElementById('chatBackBtn');
+    var closeRoomBtn = document.getElementById('chatCloseRoomBtn');
+    var minBtn       = document.getElementById('chatMinBtn');
+    var refreshBtn   = document.getElementById('chatRefreshBtn');
+    var titleEl      = document.getElementById('chatTitle');
+
+    var stomp = null, connected = false;
+    var currentRoomId = null;
+    var roomSub = null, adminSub = null;
+    var opened = false;
+
+    function esc(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+    function scrollBottom() { bodyEl.scrollTop = bodyEl.scrollHeight; }
+
+    /* 관리자: 대기 중인 채팅방 수를 가져와 채팅 버튼에 빨간 배지 표시 */
+    function refreshAdminBadge() {
+        if (!isAdmin) return;
+        var badge = document.getElementById('fsbChatBadge');
+        fetch('/api/chat/admin/pending-count', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.ok ? r.json() : { count: 0 }; })
+            .then(function (data) {
+                var count = data.count || 0;
+                if (!badge) return;
+                if (count > 0) {
+                    badge.textContent = count > 9 ? '9+' : count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                    badge.textContent = '';
+                }
+            })
+            .catch(function () {});
+    }
+
+    function ensureConnected(cb) {
+        if (connected && stomp) { cb(); return; }
+        var sock = new SockJS('/ws-chat');
+        stomp = Stomp.over(sock);
+        stomp.debug = null;
+        stomp.connect({}, function () {
+            connected = true;
+            if (isAdmin) {
+                adminSub = stomp.subscribe('/topic/chat/admin', function () {
+                    refreshAdminBadge();
+                    // 위젯이 열려 있을 때만 방 목록 즉시 갱신
+                    if (widget.style.display === 'flex') loadAdminRooms();
+                });
+            }
+            cb();
+        }, function () { connected = false; });
+    }
+
+    function appendMessage(m) {
+        var mine = (m.senderRole === myRole);
+        var div = document.createElement('div');
+        div.className = 'chat-msg ' + (mine ? 'mine' : 'theirs');
+        var nameHtml = (!mine && m.senderName) ? '<span class="chat-msg-name">' + esc(m.senderName) + '</span>' : '';
+        div.innerHTML = nameHtml + esc(m.content).replace(/\n/g,'<br>')
+            + '<span class="chat-msg-time">' + esc(m.createdAt) + '</span>';
+        bodyEl.appendChild(div);
+        scrollBottom();
+    }
+    function appendSystem(text) {
+        var div = document.createElement('div');
+        div.className = 'chat-sys';
+        div.textContent = text;
+        bodyEl.appendChild(div);
+        scrollBottom();
+    }
+
+    function subscribeRoom(roomId) {
+        if (roomSub) { try { roomSub.unsubscribe(); } catch (e) {} roomSub = null; }
+        roomSub = stomp.subscribe('/topic/chat/room/' + roomId, function (frame) {
+            var payload;
+            try { payload = JSON.parse(frame.body); } catch (e) { return; }
+            if (payload && payload.type === 'closed') {
+                appendSystem('상담이 종료되었습니다.');
+                inputEl.disabled = true; sendBtn.disabled = true;
+                return;
+            }
+            appendMessage(payload);
+        });
+    }
+
+    function openConversation(roomId, titleText) {
+        currentRoomId = roomId;
+        if (roomListEl) roomListEl.style.display = 'none';
+        convoEl.style.display = 'flex';
+        bodyEl.innerHTML = '';
+        titleEl.innerHTML = '<i class="bi bi-headset me-2"></i>' + esc(titleText || '실시간 상담');
+        backBtn.style.display = isAdmin ? 'inline-block' : 'none';
+        closeRoomBtn.style.display = isAdmin ? 'flex' : 'none';
+        inputEl.disabled = false; sendBtn.disabled = false;
+        subscribeRoom(roomId);
+        fetch('/api/chat/rooms/' + roomId + '/messages', { headers: { 'Accept':'application/json' } })
+            .then(function (r) { return r.ok ? r.json() : []; })
+            .then(function (list) {
+                bodyEl.innerHTML = '';
+                if (!list.length) appendSystem('상담원과 연결되었습니다. 메시지를 남겨주세요.');
+                list.forEach(appendMessage);
+                inputEl.focus();
+            });
+    }
+
+    /* 회원: 내 방 열기 */
+    function openMyRoom() {
+        fetch('/api/chat/my-room', { headers: { 'Accept':'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                currentRoomId = data.room.id;
+                convoEl.style.display = 'flex';
+                if (roomListEl) roomListEl.style.display = 'none';
+                titleEl.innerHTML = '<i class="bi bi-headset me-2"></i>실시간 상담';
+                inputEl.disabled = false; sendBtn.disabled = false;
+                subscribeRoom(currentRoomId);
+                bodyEl.innerHTML = '';
+                if (!data.messages.length) appendSystem('상담원과 연결되었습니다. 메시지를 남겨주세요.');
+                data.messages.forEach(appendMessage);
+                inputEl.focus();
+            });
+    }
+
+    /* 관리자: 채팅방 목록 */
+    function loadAdminRooms() {
+        fetch('/api/chat/admin/rooms', { headers: { 'Accept':'application/json' } })
+            .then(function (r) { return r.ok ? r.json() : []; })
+            .then(function (rooms) {
+                if (!rooms.length) {
+                    roomListBody.innerHTML = '<p class="text-muted text-center small py-3 mb-0">진행 중인 상담이 없습니다.</p>';
+                    return;
+                }
+                roomListBody.innerHTML = '';
+                rooms.forEach(function (room) {
+                    var locked = room.adminId != null && !room.claimedByMe;
+                    var tag, tagCls;
+                    if (room.claimedByMe) { tag = '상담중(나)'; tagCls = 'mine'; }
+                    else if (locked)      { tag = '잠김 · ' + esc(room.adminName || '다른 관리자'); tagCls = 'locked'; }
+                    else                  { tag = '대기중'; tagCls = 'waiting'; }
+                    var item = document.createElement('div');
+                    item.className = 'chat-room-item' + (locked ? ' locked' : '');
+                    item.innerHTML =
+                        '<div><div class="chat-room-name">' + esc(room.memberName) + '</div>' +
+                        '<div class="chat-room-meta">' + esc(room.lastMessageAt) + '</div></div>' +
+                        '<span class="chat-room-tag ' + tagCls + '">' + tag + '</span>';
+                    if (!locked) {
+                        item.addEventListener('click', function () {
+                            if (room.claimedByMe) {
+                                openConversation(room.id, room.memberName + ' 님');
+                            } else {
+                                claimRoom(room.id, room.memberName);
+                            }
+                        });
+                    }
+                    roomListBody.appendChild(item);
+                });
+            });
+    }
+
+    function claimRoom(roomId, memberName) {
+        var headers = { 'Accept':'application/json' };
+        if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+        fetch('/api/chat/admin/rooms/' + roomId + '/claim', { method:'POST', headers: headers })
+            .then(function (r) {
+                if (r.status === 409) {
+                    return r.json().then(function (d) { alert(d.message || '이미 다른 관리자가 상담 중입니다.'); loadAdminRooms(); throw 'locked'; });
+                }
+                return r.json();
+            })
+            .then(function () { openConversation(roomId, memberName + ' 님'); })
+            .catch(function () {});
+    }
+
+    function closeCurrentRoom() {
+        if (!currentRoomId || !confirm('이 상담을 종료하시겠습니까?')) return;
+        var headers = { 'Accept':'application/json' };
+        if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+        fetch('/api/chat/admin/rooms/' + currentRoomId + '/close', { method:'POST', headers: headers })
+            .then(function () { showRoomList(); });
+    }
+
+    function sendMessage() {
+        var text = inputEl.value.trim();
+        if (!text || !currentRoomId || !connected) return;
+        stomp.send('/app/chat/send', {}, JSON.stringify({ roomId: currentRoomId, content: text }));
+        inputEl.value = '';
+        inputEl.focus();
+    }
+
+    function showRoomList() {
+        currentRoomId = null;
+        if (roomSub) { try { roomSub.unsubscribe(); } catch (e) {} roomSub = null; }
+        convoEl.style.display = 'none';
+        titleEl.innerHTML = '<i class="bi bi-headset me-2"></i>실시간 상담';
+        closeRoomBtn.style.display = 'none';
+        if (roomListEl) roomListEl.style.display = 'flex';
+        loadAdminRooms();
+    }
+
+    function openWidget() {
+        widget.style.display = 'flex';
+        opened = true;
+        ensureConnected(function () {
+            if (isAdmin) { showRoomList(); }
+            else { openMyRoom(); }
+        });
+    }
+    function closeWidget() { widget.style.display = 'none'; }
+
+    btn.addEventListener('click', function () {
+        if (widget.style.display === 'none' || !widget.style.display) openWidget();
+        else closeWidget();
+    });
+    minBtn.addEventListener('click', closeWidget);
+    if (backBtn)      backBtn.addEventListener('click', showRoomList);
+    if (closeRoomBtn) closeRoomBtn.addEventListener('click', closeCurrentRoom);
+    if (refreshBtn)   refreshBtn.addEventListener('click', loadAdminRooms);
+    sendBtn.addEventListener('click', sendMessage);
+    inputEl.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+
+    /* 관리자: 페이지 로드 시 즉시 배지 갱신 + WebSocket 백그라운드 연결 + 30초 폴링 */
+    if (isAdmin) {
+        refreshAdminBadge();
+        ensureConnected(function () {}); // 위젯 열지 않아도 WS 구독 유지
+        setInterval(refreshAdminBadge, 30000);
+    }
+})();
+</script>
+</th:block>
+
+</html>

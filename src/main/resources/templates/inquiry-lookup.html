@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('문의내역 조회')}"></th:block>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<div class="page-header">
+    <div class="page-header-overlay"></div>
+    <div class="container text-center text-white position-relative">
+        <h1 class="display-5 fw-bold">문의내역 조회</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center">
+                <li class="breadcrumb-item"><a th:href="@{/}" class="text-white-50">홈</a></li>
+                <li class="breadcrumb-item active text-white">문의내역 조회</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+
+            <!-- 사이드바 -->
+            <th:block th:replace="~{layout/fragments :: inquirySidebar('inquiry')}"></th:block>
+
+            <!-- 메인 콘텐츠 -->
+            <div class="col-md-9">
+
+                <!-- 결과가 없을 때: 조회 옵션 표시 -->
+                <div th:if="${guestInquiries == null}">
+
+                    <!-- 로그인 안내 카드 -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body p-4 text-center">
+                            <i class="bi bi-person-circle text-primary" style="font-size:2.5rem;"></i>
+                            <h5 class="fw-bold mt-3 mb-2">로그인하여 문의내역 확인</h5>
+                            <p class="text-muted mb-3">로그인하면 모든 문의내역과 답변을 편리하게 확인할 수 있습니다.</p>
+                            <a th:href="@{/auth/login}" class="btn btn-primary px-4">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>로그인하기
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="text-center text-muted small mb-4">
+                        <span>또는</span>
+                    </div>
+
+                    <!-- 비로그인 조회 폼 -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white fw-bold py-3">
+                            <i class="bi bi-search me-2 text-primary"></i>비로그인 문의 조회
+                        </div>
+                        <div class="card-body p-4">
+                            <p class="text-muted small mb-4">
+                                문의 작성 시 입력한 <strong>이름</strong>과 <strong>연락처</strong>를 입력하면 문의내역을 확인할 수 있습니다.
+                            </p>
+
+                            <div th:if="${errorMsg}" class="alert alert-danger py-2 mb-3">
+                                <i class="bi bi-exclamation-circle me-1"></i>
+                                <span th:text="${errorMsg}"></span>
+                            </div>
+
+                            <form th:action="@{/inquiry/lookup}" method="post">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <div class="row g-3">
+                                    <div class="col-md-5">
+                                        <label class="form-label fw-semibold">이름 <span class="text-danger">*</span></label>
+                                        <input type="text" name="name" class="form-control" placeholder="문의 시 입력한 이름" required>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label fw-semibold">연락처 <span class="text-danger">*</span></label>
+                                        <input type="tel" name="phone" class="form-control phone-input" placeholder="010-0000-0000" required>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="bi bi-search"></i> 조회
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 조회 결과 -->
+                <div th:if="${guestInquiries != null}">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">
+                                <i class="bi bi-envelope me-2 text-primary"></i>
+                                <span th:text="${searchName}">이름</span>님의 문의 내역
+                                (<span th:text="${guestInquiries.size()}">0</span>건)
+                            </span>
+                            <a th:href="@{/inquiry/lookup}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>다시 조회
+                            </a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div th:if="${guestInquiries.empty}" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox d-block fs-1 mb-2"></i>
+                                일치하는 문의내역이 없습니다.<br>
+                                <span class="small">이름과 연락처를 다시 확인해주세요.</span>
+                            </div>
+                            <div th:unless="${guestInquiries.empty}">
+                                <table class="table table-hover mb-0" style="table-layout:fixed; width:100%;">
+                                    <colgroup>
+                                        <col style="width:55%;">
+                                        <col style="width:25%;">
+                                        <col style="width:20%;">
+                                    </colgroup>
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-4">제목</th>
+                                            <th class="text-center">접수일</th>
+                                            <th class="text-center">상태</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="inq : ${guestInquiries}">
+                                            <td class="ps-4" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                                <a th:href="@{/inquiry/{id}/view(id=${inq.id})}"
+                                                   class="text-decoration-none text-dark fw-semibold"
+                                                   th:text="${inq.subject}"></a>
+                                            </td>
+                                            <td class="text-center text-muted small align-middle"
+                                                th:text="${#temporals.format(inq.createdAt,'yyyy.MM.dd')}"></td>
+                                            <td class="text-center align-middle">
+                                                <span class="badge"
+                                                      th:classappend="${inq.answered} ? 'bg-success' : 'bg-warning text-dark'"
+                                                      th:text="${inq.answered} ? '답변완료' : '대기중'"></span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <a th:href="@{/inquiry}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-plus me-1"></i>새 문의 작성
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('로그인')}"></th:block>
+</head>
+<body class="auth-fullscreen">
+<script>document.body.style.overflow = '';</script>
+<div class="auth-section login-page d-flex align-items-center justify-content-center">
+        <div class="auth-card card border-0 shadow-lg p-4">
+            <a th:href="@{/}" class="auth-home-btn" aria-label="홈으로 이동" title="홈으로">
+                <i class="bi bi-house-door"></i>
+            </a>
+            <div class="text-center mb-3">
+                <a th:href="@{/}" class="text-decoration-none">
+                    <h3 class="text-primary fw-bold"><i class="bi bi-drone me-2"></i>LIGHT DRONE</h3>
+                </a>
+                <p class="text-muted small">계정에 로그인하세요</p>
+            </div>
+
+            <div th:if="${disabledMsg}" class="login-restricted-note">
+                <div class="lrn-head">
+                    <i class="bi bi-lock-fill"></i>
+                    <span th:text="${disabledMsg}">접근이 제한된 계정입니다.</span>
+                </div>
+                <div class="lrn-tel">
+                    <span class="lrn-tel-label">문의</span>
+                    <a th:href="'tel:' + ${disabledTel}" th:text="${disabledTel}">010-3565-9741</a>
+                </div>
+            </div>
+            <div th:if="${blockedMsg}" class="alert alert-warning py-2 small">
+                <i class="bi bi-shield-lock me-1"></i>
+                <span th:text="${blockedMsg}"></span>
+            </div>
+            <div th:if="${errorMsg}" class="alert alert-danger py-2 small">
+                <i class="bi bi-exclamation-circle me-1"></i>
+                <span th:text="${errorMsg}"></span>
+            </div>
+            <div th:if="${successMsg}" class="alert alert-success py-2 small">
+                <i class="bi bi-check-circle me-1"></i>
+                <span th:text="${successMsg}"></span>
+            </div>
+
+            <form id="loginForm" th:action="@{/auth/login}" method="post">
+                <input type="hidden" name="redirect" th:value="${redirectUrl}"
+                       th:if="${redirectUrl != null}">
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">아이디</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                        <input type="text" name="username" id="usernameInput" class="form-control" placeholder="아이디를 입력하세요" required autofocus>
+                    </div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="rememberIdCheck">
+                        <label class="form-check-label small text-muted" for="rememberIdCheck">아이디 저장</label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">비밀번호</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
+                        <input type="password" name="password" id="passwordInput" class="form-control" placeholder="비밀번호를 입력하세요" required>
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <i class="bi bi-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 로그인 + 비회원 주문조회: 한 줄로 붙인 네모 2분할 버튼 -->
+                <div class="login-actions mb-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>로그인
+                    </button>
+                    <a th:href="@{/order/lookup}" class="btn btn-outline-secondary">
+                        <i class="bi bi-search me-1"></i>비회원 주문조회
+                    </a>
+                </div>
+
+                <!-- 아이디/비밀번호 찾기 -->
+                <div class="d-flex justify-content-center gap-2 small mb-1">
+                    <a th:href="@{/auth/find-id}" class="text-muted text-decoration-none">
+                        <i class="bi bi-person-check me-1"></i>아이디 찾기
+                    </a>
+                    <span class="text-muted">|</span>
+                    <a th:href="@{/auth/find-password}" class="text-muted text-decoration-none">
+                        <i class="bi bi-key me-1"></i>비밀번호 찾기
+                    </a>
+                </div>
+            </form>
+
+            <hr>
+            <!-- 소셜 로그인 -->
+            <p class="text-center text-muted small mb-2 fw-semibold">소셜 계정으로 로그인</p>
+            <div class="d-grid gap-2 mb-3">
+                <!-- Google -->
+                <a th:href="@{/oauth2/authorization/google}"
+                   class="btn btn-social btn-google d-flex align-items-center justify-content-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                        <path fill="none" d="M0 0h48v48H0z"/>
+                    </svg>
+                    Google로 로그인
+                </a>
+                <!-- Kakao -->
+                <a th:href="@{/oauth2/authorization/kakao}"
+                   class="btn btn-social btn-kakao d-flex align-items-center justify-content-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="#3C1E1E" d="M12 3C6.48 3 2 6.48 2 10.8c0 2.74 1.64 5.14 4.1 6.58l-1.05 3.85c-.09.33.27.6.55.41L10.1 19.1c.61.08 1.24.12 1.9.12 5.52 0 10-3.48 10-7.8S17.52 3 12 3z"/>
+                    </svg>
+                    카카오로 로그인
+                </a>
+                <!-- Naver -->
+                <a th:href="@{/oauth2/authorization/naver}"
+                   class="btn btn-social btn-naver d-flex align-items-center justify-content-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="#fff" d="M16.27 12.84 7.5 0H0v24h7.73V11.16L16.5 24H24V0h-7.73v12.84z"/>
+                    </svg>
+                    네이버로 로그인
+                </a>
+            </div>
+
+            <hr class="my-2">
+            <p class="text-center text-muted small mb-0">
+                계정이 없으신가요?
+                <a th:href="@{/auth/signup}" class="text-primary fw-semibold text-decoration-none">회원가입</a>
+            </p>
+        </div>
+    </div>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body.auth-fullscreen {
+            padding-top: 0 !important;
+        }
+
+        .auth-section.login-page {
+            min-height: 100vh;
+            padding: 28px 18px;
+            background:
+                    radial-gradient(circle at top left, rgba(16, 140, 148, .08), transparent 34%),
+                    radial-gradient(circle at bottom right, rgba(16, 140, 148, .10), transparent 28%),
+                    linear-gradient(180deg, #f6f8fb 0%, #eef3f9 100%);
+            font-family: 'Inter', 'Pretendard', 'Noto Sans KR', sans-serif;
+        }
+
+        .login-page .auth-card {
+            position: relative;
+            width: 100%;
+            max-width: 468px;
+            border-radius: 20px !important;
+            padding: 42px 40px 34px !important;
+            border: 1px solid rgba(255, 255, 255, .72);
+            background: rgba(255, 255, 255, .90);
+            backdrop-filter: blur(18px);
+            box-shadow: none !important;
+        }
+
+        .login-page h3 {
+            font-size: 1.95rem;
+            letter-spacing: -.04em;
+            color: #108C94 !important;
+            margin-bottom: .35rem;
+        }
+
+        .login-page .text-muted.small {
+            font-size: .95rem !important;
+            color: #6b7280 !important;
+            letter-spacing: -.01em;
+        }
+
+        .login-page .form-label {
+            font-size: .9rem;
+            font-weight: 600;
+            color: #2f3a4d;
+            margin-bottom: .55rem;
+        }
+
+        .login-page .form-control,
+        .login-page .input-group-text,
+        .login-page .btn {
+            border-radius: 12px !important;
+        }
+
+        .login-page .input-group > :not(:first-child):not(.invalid-tooltip):not(.valid-tooltip) {
+            border-top-left-radius: 0 !important;
+            border-bottom-left-radius: 0 !important;
+        }
+
+        .login-page .input-group > :not(:last-child):not(.invalid-tooltip):not(.valid-tooltip) {
+            border-top-right-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+        }
+
+        .login-page .form-control {
+            min-height: 56px;
+            border-color: #d9e1ea;
+            background: rgba(248, 250, 252, .96);
+            font-size: .98rem;
+            color: #1f2937;
+            box-shadow: none;
+        }
+
+        .login-page .form-control::placeholder {
+            color: #94a3b8;
+        }
+
+        .login-page .form-control:focus {
+            border-color: #108C94;
+            background: rgba(16, 140, 148, .04);
+            box-shadow: 0 0 0 4px rgba(16, 140, 148, .10);
+        }
+
+        .login-page .input-group-text {
+            min-width: 44px;
+            justify-content: center;
+            border-color: #d9e1ea;
+            background: rgba(248, 250, 252, .96);
+            color: #7b8798;
+        }
+
+        .login-page .form-check-input {
+            border-color: #c9d3df;
+        }
+
+        .login-page .form-check-label {
+            color: #7b8798 !important;
+        }
+
+        .auth-home-btn {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            z-index: 5;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, .92);
+            color: #108C94;
+            border: 1px solid #dde5ee;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            text-decoration: none;
+            transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease;
+        }
+
+        .auth-home-btn:hover {
+            background: #108C94;
+            color: #fff;
+            border-color: #108C94;
+            transform: translateY(-1px);
+        }
+
+        .login-actions {
+            display: flex;
+            gap: 0;
+            border: 1px solid #108C94;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .login-actions .btn {
+            flex: 1 1 0;
+            min-height: 52px;
+            font-size: .98rem;
+            font-weight: 600;
+            letter-spacing: -.01em;
+            white-space: nowrap;
+            border-radius: 14px !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-align: center;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+
+        .login-actions .btn-primary {
+            border: none;
+            background: linear-gradient(135deg, #108C94 0%, #0f7680 100%);
+            border-radius: 13px 0 0 13px !important;
+        }
+
+        .login-actions .btn-outline-secondary {
+            color: #27565b;
+            background: #fff;
+            border-left: 1px solid rgba(16, 140, 148, .28) !important;
+            border-radius: 0 13px 13px 0 !important;
+        }
+
+        .login-actions .btn-outline-secondary:hover {
+            background: rgba(16, 140, 148, .04);
+            color: #108C94;
+        }
+
+        .login-page hr {
+            margin: 1.15rem 0;
+            border-color: #e8edf3;
+            opacity: 1;
+        }
+
+        .btn-social {
+            font-size: .95rem;
+            font-weight: 600;
+            border-radius: 14px;
+            padding: .82rem 1rem;
+            border: 1px solid transparent;
+            transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+        }
+
+        .btn-social:hover {
+            opacity: 1;
+            transform: translateY(-1px);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, .10);
+        }
+
+        .btn-google {
+            background: #fff;
+            color: #3c4043;
+            border: 1px solid #dadce0 !important;
+        }
+
+        .btn-kakao {
+            background: #FEE500;
+            color: #3C1E1E;
+        }
+
+        .btn-naver {
+            background: #03C75A;
+            color: #fff;
+        }
+
+        .login-restricted-note {
+            border: 1px solid #f2d7d7;
+            border-left: 3px solid #d9534f;
+            background: rgba(253, 246, 246, .92);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+        }
+
+        .login-restricted-note .lrn-head {
+            display: flex;
+            align-items: flex-start;
+            gap: 7px;
+            font-size: .88rem;
+            font-weight: 600;
+            color: #b5453f;
+            line-height: 1.45;
+        }
+
+        .login-restricted-note .lrn-head i {
+            margin-top: 1px;
+        }
+
+        .login-restricted-note .lrn-tel {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 7px;
+            padding-top: 7px;
+            border-top: 1px solid #f1dede;
+            font-size: .85rem;
+        }
+
+        .login-restricted-note .lrn-tel-label {
+            color: #9aa0aa;
+            font-weight: 500;
+        }
+
+        .login-restricted-note .lrn-tel a {
+            color: #b5453f;
+            font-weight: 700;
+            text-decoration: none;
+            letter-spacing: .2px;
+        }
+
+        .login-restricted-note .lrn-tel a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 576px) {
+            .auth-section.login-page {
+                padding: 18px 12px;
+            }
+
+            .auth-home-btn {
+                top: 14px;
+                right: 14px;
+                width: 38px;
+                height: 38px;
+                font-size: .98rem;
+            }
+
+            .login-page .auth-card {
+                max-width: 100%;
+                padding: 30px 22px 24px !important;
+                border-radius: 18px !important;
+            }
+
+            .login-page h3 {
+                font-size: 1.7rem;
+            }
+
+            .login-actions .btn {
+                min-height: 50px;
+                font-size: .95rem;
+            }
+
+            .btn-social {
+                font-size: .93rem;
+                padding: .76rem .85rem;
+            }
+        }
+    </style>
+
+    <script>
+        // 비밀번호 표시/숨김
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const input = document.getElementById('passwordInput');
+            const icon = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('bi-eye', 'bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('bi-eye-slash', 'bi-eye');
+            }
+        });
+
+        // 아이디 저장
+        const usernameInput = document.getElementById('usernameInput');
+        const rememberCheck = document.getElementById('rememberIdCheck');
+        const savedId = localStorage.getItem('savedUsername');
+        if (savedId) {
+            usernameInput.value = savedId;
+            rememberCheck.checked = true;
+        }
+        // navbar 안에 로그아웃 폼이 먼저 존재하므로 querySelector('form') 대신 id로 정확히 지정
+        document.getElementById('loginForm').addEventListener('submit', function() {
+            if (rememberCheck.checked) {
+                localStorage.setItem('savedUsername', usernameInput.value);
+            } else {
+                localStorage.removeItem('savedUsername');
+            }
+        });
+    </script>
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

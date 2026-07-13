@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('본인 확인')}"></th:block>
+    <style>
+        .verify-wrap {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            min-height: 720px;
+            padding: 42px 0 112px;
+        }
+        .verify-card {
+            width: 100%;
+            max-width: 520px;
+            border: 1px solid #e3e8ef !important;
+            border-radius: 0 !important;
+            box-shadow: 0 12px 30px rgba(15,23,42,.05) !important;
+        }
+        .verify-card .card-body {
+            padding: 38px 42px 34px !important;
+        }
+        .verify-card h5 {
+            letter-spacing: -.03em;
+        }
+        .verify-card .form-label {
+            color: #4b5563 !important;
+            font-weight: 600 !important;
+            margin-bottom: 8px;
+        }
+        .verify-card .input-group-lg > .form-control,
+        .verify-card .input-group-lg > .btn {
+            min-height: 46px;
+            border-radius: 0 !important;
+            font-size: 1rem;
+            box-shadow: none !important;
+        }
+        .verify-card .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: inset 0 -1px 0 #0d6efd !important;
+        }
+        .verify-card .btn {
+            border-radius: 0 !important;
+            font-weight: 500;
+            box-shadow: none !important;
+        }
+        .verify-card .btn-lg {
+            min-height: 46px;
+            font-size: 1rem;
+        }
+        .verify-card .card-footer {
+            border-top: 1px solid #edf0f4 !important;
+            border-radius: 0 !important;
+            background: #f8fafc !important;
+            padding: 14px 36px !important;
+        }
+        @media (max-width: 767.98px) {
+            #mainNav .menu-link-all { display: none !important; }
+            #sidebarShowBtn {
+                top: 96px !important;
+                left: 10px !important;
+                min-width: 74px;
+                height: 36px;
+                padding: 0 12px;
+                border-radius: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<div class="page-header">
+    <div class="page-header-overlay"></div>
+    <div class="container text-center text-white position-relative">
+        <h1 class="display-5 fw-bold">본인 확인</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center">
+                <li class="breadcrumb-item"><a th:href="@{/}" class="text-white-50">홈</a></li>
+                <li class="breadcrumb-item"><a th:href="@{/mypage}" class="text-white-50">마이페이지</a></li>
+                <li class="breadcrumb-item active text-white">본인 확인</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<section class="section-padding">
+    <div class="container">
+        <div class="row g-4">
+            <th:block th:replace="~{layout/fragments :: mypageSidebar('edit')}"></th:block>
+
+            <div class="col-md-9">
+                <div class="verify-wrap">
+                    <div class="verify-card card border-0 shadow">
+                        <div class="card-body p-5">
+                            <div class="text-center mb-4">
+                                <h5 class="fw-bold mb-1">본인 확인이 필요합니다</h5>
+                                <p class="text-muted small mb-0">
+                                    개인정보 보호를 위해 현재 비밀번호를 입력해 주세요.
+                                </p>
+                            </div>
+
+                            <div th:if="${errorMsg}" class="alert alert-danger py-2 mb-3">
+                                <i class="bi bi-exclamation-circle me-1"></i>
+                                <span th:text="${errorMsg}"></span>
+                            </div>
+
+                            <form th:action="@{/mypage/verify}" method="post"
+                                  th:object="${passwordVerifyDto}" novalidate>
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold text-secondary small">현재 비밀번호</label>
+                                    <div class="input-group input-group-lg">
+                                        <input type="password" th:field="*{currentPassword}"
+                                               class="form-control border-end-0"
+                                               th:classappend="${#fields.hasErrors('currentPassword')} ? 'is-invalid'"
+                                               placeholder="비밀번호를 입력해 주세요"
+                                               id="pwInput" autocomplete="current-password" autofocus>
+                                        <button class="btn btn-outline-secondary border-start-0" type="button" id="togglePw"
+                                                tabindex="-1">
+                                            <i class="bi bi-eye" id="eyeIcon"></i>
+                                        </button>
+                                        <div class="invalid-feedback" th:errors="*{currentPassword}"></div>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        확인하고 정보 수정하기
+                                    </button>
+                                    <a th:href="@{/mypage}" class="btn btn-outline-secondary">
+                                        취소
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="card-footer bg-light border-0 rounded-bottom-4 px-5 py-3 text-center">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                비밀번호 확인 후 휴대전화번호, 배송지, 비밀번호를 변경할 수 있습니다.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.body.classList.add('has-mypage-sidebar');
+    });
+
+    document.getElementById('togglePw').addEventListener('click', function () {
+        const input = document.getElementById('pwInput');
+        const icon = document.getElementById('eyeIcon');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.replace('bi-eye', 'bi-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.replace('bi-eye-slash', 'bi-eye');
+        }
+    });
+
+    document.getElementById('pwInput').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this.closest('form').submit();
+        }
+    });
+</script>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

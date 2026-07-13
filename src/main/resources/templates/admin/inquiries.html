@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('문의 / 후기 관리')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('inquiries')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('문의 / 후기 관리', '견적문의, Q&A, 후기 응대를 한 화면 흐름 안에서 관리합니다.')}"></th:block>
+
+        <div class="admin-section-grid">
+            <div th:if="${successMsg}" class="alert alert-success mb-0"><span th:text="${successMsg}"></span></div>
+            <div th:if="${errorMsg}" class="alert alert-danger mb-0"><span th:text="${errorMsg}"></span></div>
+
+            <div class="admin-tab-nav">
+                <a class="admin-tab-link" th:classappend="${tab == 'inquiry'} ? ' active' : ''"
+                   th:href="@{/admin/inquiries(tab='inquiry')}">
+                    <i class="bi bi-envelope"></i>
+                    <span>견적 문의</span>
+                    <span class="badge text-bg-secondary" th:text="${inquiries.totalElements}">0</span>
+                </a>
+                <a class="admin-tab-link" th:classappend="${tab == 'qna'} ? ' active' : ''"
+                   th:href="@{/admin/inquiries(tab='qna')}">
+                    <i class="bi bi-chat-dots"></i>
+                    <span>Q&A 질문</span>
+                    <span class="badge text-bg-secondary" th:text="${qnaList.totalElements}">0</span>
+                </a>
+                <a class="admin-tab-link" th:classappend="${tab == 'review'} ? ' active' : ''"
+                   th:href="@{/admin/inquiries(tab='review')}">
+                    <i class="bi bi-star-fill"></i>
+                    <span>후기 관리</span>
+                    <span class="badge text-bg-secondary" th:text="${reviews.totalElements}">0</span>
+                </a>
+            </div>
+
+            <section class="admin-panel" th:if="${tab == 'inquiry'}">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">견적 문의</h3>
+                        <div class="admin-panel-subtitle">답변 대기 문의를 먼저 확인하세요.</div>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <form id="inquiryBulkForm" th:action="@{/admin/inquiries/bulk-delete}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <div class="admin-console-toolbar">
+                            <span class="small text-muted"><span id="inquiryCheckedCount">0</span>건 선택됨</span>
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                    onclick="return inquiryCheckedCount() > 0 ? confirm(inquiryCheckedCount() + '건의 견적문의를 삭제하시겠습니까?') : (alert('삭제할 견적문의를 선택해 주세요.'), false)">
+                                선택 삭제
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table admin-console-table align-middle mb-0" style="table-layout: fixed;">
+                                <colgroup>
+                                    <col style="width: 4%;">
+                                    <col style="width: 7%;">
+                                    <col style="width: 11%;">
+                                    <col style="width: 28%;">
+                                    <col style="width: 18%;">
+                                    <col style="width: 10%;">
+                                    <col style="width: 12%;">
+                                    <col style="width: 10%;">
+                                </colgroup>
+                                <thead>
+                                <tr>
+                                    <th class="text-center"><input type="checkbox" id="inquirySelectAll" class="form-check-input"></th>
+                                    <th class="text-center">번호</th>
+                                    <th>이름</th>
+                                    <th>제목</th>
+                                    <th>이메일</th>
+                                    <th class="text-center">상태</th>
+                                    <th class="text-center">접수일</th>
+                                    <th class="text-center">관리</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="inq : ${inquiries.content}">
+                                    <td class="text-center">
+                                        <input type="checkbox" name="ids" class="form-check-input inquiry-check"
+                                               th:value="${inq.id}" onchange="updateInquiryCount()">
+                                    </td>
+                                    <td class="text-center text-muted small" th:text="${inq.id}"></td>
+                                    <td class="small" th:text="${inq.name}"></td>
+                                    <td class="small text-truncate">
+                                        <a th:href="@{/admin/inquiries/{id}(id=${inq.id})}"
+                                           th:text="${inq.subject}"
+                                           class="text-decoration-none text-dark fw-semibold"></a>
+                                    </td>
+                                    <td class="small text-muted text-truncate" th:text="${inq.email}"></td>
+                                    <td class="text-center">
+                                        <span th:if="${inq.answered}" class="admin-status-text done">답변완료</span>
+                                        <span th:unless="${inq.answered}" class="admin-status-text pending">미답변</span>
+                                    </td>
+                                    <td class="text-center text-muted small" th:text="${#temporals.format(inq.createdAt,'yyyy.MM.dd')}"></td>
+                                    <td class="text-center">
+                                        <div class="admin-actions">
+                                            <a th:href="@{/admin/inquiries/{id}(id=${inq.id})}" class="aa-btn aa-view">상세</a>
+                                            <span class="aa-sep" aria-hidden="true">|</span>
+                                            <button type="submit"
+                                                    th:formaction="@{/admin/inquiries/{id}/delete(id=${inq.id})}"
+                                                    formmethod="post"
+                                                    class="aa-btn aa-del"
+                                                    onclick="return confirm('이 문의를 삭제하시겠습니까?')">삭제</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr th:if="${inquiries.totalElements == 0}">
+                                    <td colspan="8">
+                                        <div class="admin-empty my-3">
+                                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                            견적 문의가 없습니다.
+                                        </div>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+
+                    <nav th:if="${inquiries.totalPages > 1}" class="mt-4">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item" th:classappend="${inquiries.first ? ' disabled' : ''}">
+                                <a class="page-link" th:href="@{/admin/inquiries(tab='inquiry',inquiryPage=${inquiries.number - 1})}">이전</a>
+                            </li>
+                            <li class="page-item" th:each="i : ${#numbers.sequence(0, inquiries.totalPages - 1)}"
+                                th:classappend="${i == inquiries.number ? ' active' : ''}">
+                                <a class="page-link" th:href="@{/admin/inquiries(tab='inquiry',inquiryPage=${i})}" th:text="${i + 1}">1</a>
+                            </li>
+                            <li class="page-item" th:classappend="${inquiries.last ? ' disabled' : ''}">
+                                <a class="page-link" th:href="@{/admin/inquiries(tab='inquiry',inquiryPage=${inquiries.number + 1})}">다음</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </section>
+
+            <section class="admin-panel" th:if="${tab == 'qna'}">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">Q&A 질문</h3>
+                        <div class="admin-panel-subtitle">질문 상태와 삭제를 빠르게 처리할 수 있습니다.</div>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <form id="qnaBulkForm" th:action="@{/admin/qna/bulk-delete}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <div class="admin-console-toolbar">
+                            <span class="small text-muted"><span id="qnaCheckedCount">0</span>건 선택됨</span>
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                    onclick="return qnaCheckedCount() > 0 ? confirm(qnaCheckedCount() + '건의 Q&A를 삭제하시겠습니까?') : (alert('삭제할 Q&A를 선택해 주세요.'), false)">
+                                선택 삭제
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table admin-console-table align-middle mb-0" style="table-layout: fixed;">
+                                <colgroup>
+                                    <col style="width: 4%;">
+                                    <col style="width: 6%;">
+                                    <col style="width: 12%;">
+                                    <col style="width: 34%;">
+                                    <col style="width: 8%;">
+                                    <col style="width: 10%;">
+                                    <col style="width: 14%;">
+                                    <col style="width: 12%;">
+                                </colgroup>
+                                <thead>
+                                <tr>
+                                    <th class="text-center"><input type="checkbox" id="qnaSelectAll" class="form-check-input"></th>
+                                    <th class="text-center">번호</th>
+                                    <th>작성자</th>
+                                    <th>제목</th>
+                                    <th class="text-center">조회</th>
+                                    <th class="text-center">상태</th>
+                                    <th class="text-center">작성일</th>
+                                    <th class="text-center">관리</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="qna : ${qnaList.content}">
+                                    <td class="text-center">
+                                        <input type="checkbox" name="ids" class="form-check-input qna-check"
+                                               th:value="${qna.id}" onchange="updateQnaCount()">
+                                    </td>
+                                    <td class="text-center text-muted small" th:text="${qna.id}"></td>
+                                    <td class="small" th:text="${qna.member != null ? qna.member.name : '-'}"></td>
+                                    <td class="small text-truncate">
+                                        <a th:href="@{/admin/qna/{id}(id=${qna.id})}"
+                                           th:text="${qna.title}"
+                                           class="text-decoration-none text-dark fw-semibold"></a>
+                                    </td>
+                                    <td class="text-center text-muted small" th:text="${qna.viewCount}"></td>
+                                    <td class="text-center">
+                                        <span th:if="${qna.answered}" class="admin-status-text done">답변완료</span>
+                                        <span th:unless="${qna.answered}" class="admin-status-text pending">미답변</span>
+                                    </td>
+                                    <td class="text-center text-muted small" th:text="${#temporals.format(qna.createdAt,'yyyy.MM.dd')}"></td>
+                                    <td class="text-center">
+                                        <div class="admin-actions">
+                                            <a th:href="@{/admin/qna/{id}(id=${qna.id})}" class="aa-btn aa-view">상세</a>
+                                            <span class="aa-sep" aria-hidden="true">|</span>
+                                            <button type="submit"
+                                                    th:formaction="@{/admin/qna/{id}/delete(id=${qna.id})}"
+                                                    formmethod="post"
+                                                    class="aa-btn aa-del"
+                                                    onclick="return confirm('이 Q&A를 삭제하시겠습니까?')">삭제</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr th:if="${qnaList.totalElements == 0}">
+                                    <td colspan="8">
+                                        <div class="admin-empty my-3">
+                                            <i class="bi bi-chat-dots fs-3 d-block mb-2"></i>
+                                            Q&A 질문이 없습니다.
+                                        </div>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+
+                    <nav th:if="${qnaList.totalPages > 1}" class="mt-4">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item" th:classappend="${qnaList.first ? ' disabled' : ''}">
+                                <a class="page-link" th:href="@{/admin/inquiries(tab='qna',qnaPage=${qnaList.number - 1})}">이전</a>
+                            </li>
+                            <li class="page-item" th:each="i : ${#numbers.sequence(0, qnaList.totalPages - 1)}"
+                                th:classappend="${i == qnaList.number ? ' active' : ''}">
+                                <a class="page-link" th:href="@{/admin/inquiries(tab='qna',qnaPage=${i})}" th:text="${i + 1}">1</a>
+                            </li>
+                            <li class="page-item" th:classappend="${qnaList.last ? ' disabled' : ''}">
+                                <a class="page-link" th:href="@{/admin/inquiries(tab='qna',qnaPage=${qnaList.number + 1})}">다음</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </section>
+
+            <section class="admin-panel" th:if="${tab == 'review'}">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">구매 후기</h3>
+                        <div class="admin-panel-subtitle">노출 여부와 삭제를 함께 관리합니다.</div>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <form id="reviewBulkForm" th:action="@{/admin/reviews/bulk-delete}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <div class="admin-console-toolbar">
+                            <span class="small text-muted"><span id="reviewCheckedCount">0</span>건 선택됨</span>
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                    onclick="return reviewCheckedCount() > 0 ? confirm(reviewCheckedCount() + '건의 후기를 삭제하시겠습니까?') : (alert('삭제할 후기를 선택해 주세요.'), false)">
+                                선택 삭제
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table admin-console-table align-middle mb-0" style="table-layout: fixed;">
+                                <colgroup>
+                                    <col style="width: 4%;">
+                                    <col style="width: 6%;">
+                                    <col style="width: 12%;">
+                                    <col style="width: 28%;">
+                                    <col style="width: 10%;">
+                                    <col style="width: 9%;">
+                                    <col style="width: 11%;">
+                                    <col style="width: 8%;">
+                                    <col style="width: 12%;">
+                                </colgroup>
+                                <thead>
+                                <tr>
+                                    <th class="text-center"><input type="checkbox" id="reviewSelectAll" class="form-check-input"></th>
+                                    <th class="text-center">번호</th>
+                                    <th>카테고리</th>
+                                    <th>제목</th>
+                                    <th>작성자</th>
+                                    <th class="text-center">조회</th>
+                                    <th class="text-center">작성일</th>
+                                    <th class="text-center">상태</th>
+                                    <th class="text-center">관리</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="review : ${reviews.content}">
+                                    <td class="text-center">
+                                        <input type="checkbox" name="ids" class="form-check-input review-check"
+                                               th:value="${review.id}" onchange="updateReviewCount()">
+                                    </td>
+                                    <td class="text-center text-muted small" th:text="${review.id}"></td>
+                                    <td class="small text-muted" th:text="${review.category}">카테고리</td>
+                                    <td class="small text-truncate">
+                                        <a th:href="@{/review/{id}(id=${review.id})}" class="text-decoration-none text-dark fw-semibold"
+                                           th:text="${review.title}">후기 제목</a>
+                                    </td>
+                                    <td class="small" th:text="${review.member != null ? review.member.name : '-'}"></td>
+                                    <td class="text-center text-muted small" th:text="${review.viewCount}"></td>
+                                    <td class="text-center text-muted small" th:text="${#temporals.format(review.createdAt,'yyyy.MM.dd')}"></td>
+                                    <td class="text-center">
+                                        <span th:if="${review.visible}" class="admin-status-text done">공개</span>
+                                        <span th:unless="${review.visible}" class="admin-status-text pending">비공개</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-inline-flex gap-2 flex-wrap justify-content-center align-items-center">
+                                            <form th:action="@{/admin/reviews/{id}/toggle(id=${review.id})}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">노출 변경</button>
+                                            </form>
+                                            <span class="admin-actions">
+                                                <form th:action="@{/admin/reviews/{id}/delete(id=${review.id})}" method="post"
+                                                      onsubmit="return confirm('이 후기를 삭제하시겠습니까?')">
+                                                    <input type="hidden" name="from" value="list">
+                                                    <button type="submit" class="aa-btn aa-del">삭제</button>
+                                                </form>
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr th:if="${reviews.totalElements == 0}">
+                                    <td colspan="9">
+                                        <div class="admin-empty my-3">
+                                            <i class="bi bi-star fs-3 d-block mb-2"></i>
+                                            등록된 후기가 없습니다.
+                                        </div>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+
+                    <nav th:if="${reviews.totalPages > 1}" class="mt-4">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item" th:classappend="${reviews.first ? ' disabled' : ''}">
+                                <a class="page-link" th:href="@{/admin/inquiries(tab='review',reviewPage=${reviews.number - 1})}">이전</a>
+                            </li>
+                            <li class="page-item" th:each="i : ${#numbers.sequence(0, reviews.totalPages - 1)}"
+                                th:classappend="${i == reviews.number ? ' active' : ''}">
+                                <a class="page-link" th:href="@{/admin/inquiries(tab='review',reviewPage=${i})}" th:text="${i + 1}">1</a>
+                            </li>
+                            <li class="page-item" th:classappend="${reviews.last ? ' disabled' : ''}">
+                                <a class="page-link" th:href="@{/admin/inquiries(tab='review',reviewPage=${reviews.number + 1})}">다음</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+<script>
+function inquiryCheckedCount() {
+    return document.querySelectorAll('.inquiry-check:checked').length;
+}
+function qnaCheckedCount() {
+    return document.querySelectorAll('.qna-check:checked').length;
+}
+function reviewCheckedCount() {
+    return document.querySelectorAll('.review-check:checked').length;
+}
+
+function updateInquiryCount() {
+    document.getElementById('inquiryCheckedCount').textContent = inquiryCheckedCount();
+}
+function updateQnaCount() {
+    document.getElementById('qnaCheckedCount').textContent = qnaCheckedCount();
+}
+function updateReviewCount() {
+    document.getElementById('reviewCheckedCount').textContent = reviewCheckedCount();
+}
+
+const inquirySelectAll = document.getElementById('inquirySelectAll');
+if (inquirySelectAll) {
+    inquirySelectAll.addEventListener('change', function () {
+        document.querySelectorAll('.inquiry-check').forEach(cb => cb.checked = this.checked);
+        updateInquiryCount();
+    });
+}
+
+const qnaSelectAll = document.getElementById('qnaSelectAll');
+if (qnaSelectAll) {
+    qnaSelectAll.addEventListener('change', function () {
+        document.querySelectorAll('.qna-check').forEach(cb => cb.checked = this.checked);
+        updateQnaCount();
+    });
+}
+
+const reviewSelectAll = document.getElementById('reviewSelectAll');
+if (reviewSelectAll) {
+    reviewSelectAll.addEventListener('change', function () {
+        document.querySelectorAll('.review-check').forEach(cb => cb.checked = this.checked);
+        updateReviewCount();
+    });
+}
+</script>
+</body>
+</html>

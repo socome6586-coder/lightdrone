@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('문의하기')}"></th:block>
+    <style>
+        /* ── 견적문의 — 컴팩트/네모/세련 (폰트 전반 1px 축소) ── */
+        .inquiry-page { padding-top: 42px; }
+        .content-page-banner { margin-bottom: 24px; }
+        .content-page-banner img { display: block; border-radius: 10px; }
+
+        .inquiry-page .content-section-title {
+            font-size: 1.12rem;
+            margin-bottom: 14px;
+        }
+        .inquiry-page .content-section-title i { font-size: 1em; }
+
+        .inquiry-page .form-label {
+            font-size: 0.84rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        /* 네모 입력창 */
+        .inquiry-page .form-control {
+            border-radius: 0;
+            border: 1px solid #dadfe6;
+            padding: 9px 13px;
+            font-size: 0.875rem;
+            background: #fcfcfd;
+            box-shadow: none;
+        }
+        .inquiry-page .form-control::placeholder { color: #aab1bb; }
+        .inquiry-page .form-control:focus {
+            border-color: #1a4fd8;
+            box-shadow: 0 0 0 2px rgba(26,79,216,0.10);
+            background: #fff;
+        }
+        .inquiry-page textarea.form-control { min-height: 150px; resize: vertical; }
+
+        /* 네모 버튼 */
+        .inquiry-page .btn { border-radius: 0; }
+        .inquiry-page .btn-lg {
+            font-size: 0.92rem;
+            font-weight: 600;
+            padding: 12px 16px;
+            letter-spacing: -0.2px;
+        }
+
+        .inquiry-page .form-check-label { font-size: 0.82rem; }
+        .inquiry-page .invalid-feedback,
+        .inquiry-page .small,
+        .inquiry-page small { font-size: 0.78rem; }
+
+        /* 연락처 정보 — 폰트 1px 축소 */
+        .inquiry-page .contact-info-card h6 { font-size: 0.92rem; }
+        .inquiry-page .contact-info-card p { font-size: 0.86rem; }
+        .inquiry-page .contact-info-card p.small { font-size: 0.78rem; }
+        .inquiry-page .contact-icon {
+            width: 42px !important;
+            height: 42px !important;
+            font-size: 0.95rem;
+        }
+        .inquiry-page .contact-item { margin-bottom: 1.1rem !important; }
+    </style>
+</head>
+<body>
+<script>document.body.style.overflow = '';</script>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<section class="content-page inquiry-page">
+    <div class="container">
+
+        <!-- 견적문의 상단 배너 -->
+        <div class="content-page-banner">
+            <img th:src="@{/images/inquiry.png}" alt="견적문의" class="img-fluid w-100">
+        </div>
+
+        <div class="row g-4">
+
+            <!-- 사이드바 (로그인/비로그인 공용) -->
+            <th:block th:replace="~{layout/fragments :: inquirySidebar('newInquiry')}"></th:block>
+
+            <!-- 메인 콘텐츠 영역 -->
+            <div class="col-md-9">
+                <div class="row g-4">
+
+                    <!-- 문의 폼 -->
+                    <div th:class="${member != null} ? 'col-lg-7' : 'col-lg-7'">
+                        <h4 class="content-section-title"><i class="bi bi-pencil-square"></i>온라인 문의</h4>
+
+                        <!-- 접수 완료 카드 -->
+                        <div th:if="${successMsg}" class="text-center py-4">
+                            <div class="border border-success border-2 rounded-3 p-5">
+                                <i class="bi bi-check-circle-fill text-success d-block mb-3" style="font-size:4rem;"></i>
+                                <h4 class="fw-bold text-success mb-2">문의가 접수되었습니다!</h4>
+                                <p class="text-muted mb-4" th:text="${successMsg}"></p>
+                                <div class="d-flex gap-2 justify-content-center flex-wrap">
+                                    <a th:if="${submittedInquiryId != null}"
+                                       th:href="@{/inquiry/{id}/view(id=${submittedInquiryId})}"
+                                       class="btn btn-primary px-4">
+                                        <i class="bi bi-eye me-1"></i>문의 내용 보기
+                                    </a>
+                                    <a th:href="@{/inquiry}" class="btn btn-success px-4">
+                                        <i class="bi bi-pencil-square me-1"></i>새 문의 작성
+                                    </a>
+                                    <a th:href="@{/}" class="btn btn-outline-secondary px-4">
+                                        <i class="bi bi-house me-1"></i>홈으로
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form th:unless="${successMsg}" id="inquiryForm"
+                              th:action="@{/inquiry}" method="post" th:object="${inquiryDto}" novalidate>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">이름 <span class="text-danger">*</span></label>
+                                    <input type="text" th:field="*{name}" class="form-control"
+                                           th:classappend="${#fields.hasErrors('name')} ? 'is-invalid'" placeholder="홍길동">
+                                    <div class="invalid-feedback" th:errors="*{name}"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">
+                                        연락처
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="tel" th:field="*{phone}" class="form-control phone-input"
+                                           required
+                                           th:classappend="${#fields.hasErrors('phone')} ? 'is-invalid'"
+                                           placeholder="010-0000-0000"
+                                           maxlength="13">
+                                    <div class="invalid-feedback" th:errors="*{phone}"></div>
+                                    <div id="phoneClientError" class="text-danger small mt-1" style="display:none;">
+                                        <i class="bi bi-exclamation-circle me-1"></i>
+                                        <span id="phoneClientErrorMsg"></span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">이메일 <span class="text-danger">*</span></label>
+                                    <input type="email" th:field="*{email}" class="form-control"
+                                           th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'" placeholder="example@email.com">
+                                    <div class="invalid-feedback" th:errors="*{email}"></div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">제목 <span class="text-danger">*</span></label>
+                                    <input type="text" th:field="*{subject}" class="form-control"
+                                           th:classappend="${#fields.hasErrors('subject')} ? 'is-invalid'" placeholder="문의 제목을 입력해주세요">
+                                    <div class="invalid-feedback" th:errors="*{subject}"></div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">내용 <span class="text-danger">*</span></label>
+                                    <textarea th:field="*{content}" class="form-control" rows="7"
+                                              th:classappend="${#fields.hasErrors('content')} ? 'is-invalid'"
+                                              placeholder="문의 내용을 자세히 입력해주세요."></textarea>
+                                    <div class="invalid-feedback" th:errors="*{content}"></div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="privacyCheck">
+                                        <label class="form-check-label small" for="privacyCheck">
+                                            개인정보 수집 및 이용에 동의합니다. <span class="text-danger">*</span>
+                                        </label>
+                                    </div>
+                                    <div id="privacyError" class="text-danger small mt-1" style="display:none;">
+                                        <i class="bi bi-exclamation-circle me-1"></i>개인정보 수집 및 이용에 동의해주세요.
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                                        <i class="bi bi-send me-2"></i>문의 보내기
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- 연락처 정보 -->
+                    <div class="col-lg-5">
+                        <h4 class="content-section-title"><i class="bi bi-headset"></i>연락처 정보</h4>
+                        <div class="contact-info-card">
+                            <div class="contact-item d-flex gap-3 mb-4">
+                                <div class="contact-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;">
+                                    <i class="bi bi-telephone-fill"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">문의 전화</h6>
+                                    <p class="text-muted mb-0">010-3565-9741 (이성희)</p>
+                                    <p class="text-muted small mb-0">평일 09:00~18:00 (점심 12~13시) / 주말·공휴일 휴무</p>
+                                </div>
+                            </div>
+                            <div class="contact-item d-flex gap-3 mb-4">
+                                <div class="contact-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;">
+                                    <i class="bi bi-wrench"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">기술 문의</h6>
+                                    <p class="text-muted mb-0">010-2473-8303 (원종인)</p>
+                                </div>
+                            </div>
+                            <div class="contact-item d-flex gap-3 mb-4">
+                                <div class="contact-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;">
+                                    <i class="bi bi-envelope-fill"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">개인정보 책임자</h6>
+                                    <p class="text-muted mb-0">이성희 (jjang8517@naver.com)</p>
+                                </div>
+                            </div>
+                            <div class="contact-item d-flex gap-3">
+                                <div class="contact-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;">
+                                    <i class="bi bi-geo-alt-fill"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">주소</h6>
+                                    <p class="text-muted mb-0">부산광역시 강서구 과학산단1로60번길 31,<br>8동 301호 (지사동, 부산테크노파크)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+<script>
+(function () {
+    var form       = document.getElementById('inquiryForm');
+    if (!form) return;
+
+    var phoneInput  = form.querySelector('.phone-input');
+    var privacyCb   = document.getElementById('privacyCheck');
+    var privacyErr  = document.getElementById('privacyError');
+    var phoneErr    = document.getElementById('phoneClientError');
+    var phoneErrMsg = document.getElementById('phoneClientErrorMsg');
+
+    /* ── 숫자 배열 → 하이픈 포함 문자열 변환 ──────────────────
+       02-XXX(X)-XXXX / 0XX-XXX(X)-XXXX 두 패턴 모두 처리     */
+    function formatPhone(str) {
+        var d = str.replace(/\D/g, '');          // 숫자만 추출
+        if (!d) return '';
+        if (d.charAt(0) !== '0') return d;       // 0으로 시작 안 하면 그대로
+        if (d.startsWith('02')) {
+            d = d.slice(0, 10);
+            if (d.length <= 2) return d;
+            if (d.length <= 6) return d.slice(0,2) + '-' + d.slice(2);
+            return d.slice(0,2) + '-' + d.slice(2,6) + '-' + d.slice(6);
+        }
+        d = d.slice(0, 11);
+        if (d.length <= 3) return d;
+        if (d.length <= 7) return d.slice(0,3) + '-' + d.slice(3);
+        return d.slice(0,3) + '-' + d.slice(3,7) + '-' + d.slice(7);
+    }
+
+    /* ── 페이지 로드 시 기존 값 포맷 (로그인 사용자 전화번호) ── */
+    if (phoneInput && phoneInput.value) {
+        phoneInput.value = formatPhone(phoneInput.value);
+    }
+
+    /* ── 입력 중 실시간 하이픈 자동 삽입 ──────────────────────── */
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function () {
+            this.value = formatPhone(this.value);
+            // 오류 표시 중일 때만 실시간 재검증 (오류 즉시 해소)
+            if (this.classList.contains('is-invalid')) doValidate();
+        });
+    }
+
+    /* ── 오류 표시 / 해제 ──────────────────────────────────────── */
+    function showPhoneError(msg) {
+        if (!phoneInput) return;
+        phoneInput.classList.add('is-invalid');
+        if (phoneErr)    phoneErr.style.display = 'block';
+        if (phoneErrMsg) phoneErrMsg.textContent = msg || '올바른 연락처 형식을 입력해주세요. (예: 010-1234-5678)';
+    }
+    function clearPhoneError() {
+        if (!phoneInput) return;
+        phoneInput.classList.remove('is-invalid');
+        if (phoneErr) phoneErr.style.display = 'none';
+    }
+
+    /* ── 연락처 유효성 검사 ────────────────────────────────────
+       ① 포맷 정규화 → ② 빈 값 체크 → ③ 정규식 검증
+       정규식: 0XX-XXX(X)-XXXX (하이픈 포함, 0으로 시작)       */
+    var phonePattern = /^0\d{1,2}-\d{3,4}-\d{4}$/;
+
+    function doValidate() {
+        if (!phoneInput) return true;
+
+        // blur/submit 시 값 재정규화 (혹시 남은 오포맷 처리)
+        if (phoneInput.value) phoneInput.value = formatPhone(phoneInput.value);
+
+        var val = phoneInput.value.trim();
+
+        if (phoneInput.required && !val) {
+            showPhoneError('연락처를 입력해주세요.');
+            return false;
+        }
+        if (val && !phonePattern.test(val)) {
+            showPhoneError('올바른 연락처 형식을 입력해주세요. (예: 010-1234-5678)');
+            return false;
+        }
+        clearPhoneError();
+        return true;
+    }
+
+    /* blur 시 포맷 정리 + 검증 */
+    if (phoneInput) {
+        phoneInput.addEventListener('blur', doValidate);
+    }
+
+    /* ── 폼 제출 검증 ──────────────────────────────────────────── */
+    form.addEventListener('submit', function (e) {
+        var phoneOk   = doValidate();
+        var privacyOk = privacyCb.checked;
+
+        if (!privacyOk) {
+            privacyErr.style.display = 'block';
+            privacyCb.closest('.form-check').scrollIntoView({behavior: 'smooth', block: 'center'});
+        } else {
+            privacyErr.style.display = 'none';
+        }
+
+        if (!phoneOk || !privacyOk) {
+            e.preventDefault();
+            if (!phoneOk && phoneInput) {
+                phoneInput.scrollIntoView({behavior: 'smooth', block: 'center'});
+                phoneInput.focus();
+            }
+        }
+    });
+
+    privacyCb.addEventListener('change', function () {
+        privacyErr.style.display = this.checked ? 'none' : 'block';
+    });
+})();
+</script>
+</body>
+</html>

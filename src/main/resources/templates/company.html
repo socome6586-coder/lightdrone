@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('회사정보')}"></th:block>
+    <style>
+        /* ===== 섹션 제목 ===== */
+        .company-sec-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #1a2233;
+            letter-spacing: -0.4px;
+        }
+        .company-sec-title .bar {
+            display: inline-block;
+            width: 4px;
+            height: 1.1em;
+            background: var(--primary);
+            border-radius: 2px;
+            margin-right: 0.55rem;
+            vertical-align: -0.12em;
+        }
+
+        /* ===== 정보 카드 ===== */
+        .info-card {
+            border: 1px solid #e8ecf3;
+            border-radius: 1rem;
+            background: #fff;
+            padding: 0.5rem 1.5rem;
+        }
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.3rem 0;
+            border-bottom: 1px dashed #eef1f6;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-row .ir-icon {
+            flex: 0 0 38px;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: #eef3ff;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+        }
+        .info-row .ir-label {
+            font-size: 0.78rem;
+            color: #8a94a6;
+            font-weight: 600;
+            margin-bottom: 0;
+            line-height: 1.3;
+        }
+        .info-row .ir-value {
+            font-size: 0.97rem;
+            color: #1a2233;
+            font-weight: 600;
+            word-break: keep-all;
+            line-height: 1.35;
+        }
+        .info-row a.ir-value {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        .info-row a.ir-value:hover { text-decoration: underline; }
+        .info-row .ir-value small {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #8a94a6;
+            margin-top: 0.1rem;
+        }
+
+        /* ===== 지도 ===== */
+        .company-map-wrap {
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid #e8ecf3;
+        }
+        .company-map-wrap iframe {
+            width: 100%;
+            height: 340px;
+            border: 0;
+            display: block;
+        }
+
+        /* ── 모바일: 문의 전화 + 회사 정보를 한 줄(2열)로 ── */
+        @media (max-width: 767px) {
+            .company-info-row { --bs-gutter-x: 0.7rem; }
+            .company-info-row .company-sec-title { font-size: 1rem; margin-bottom: 0.6rem !important; }
+            .company-info-row .company-sec-title .bar { margin-right: 0.4rem; }
+            .company-info-row .info-card { padding: 0.3rem 0.75rem; }
+            .company-info-row .info-row { gap: 0; padding: 0.45rem 0; }
+            .company-info-row .info-row .ir-icon { display: none; }
+            .company-info-row .info-row .ir-label { font-size: 0.7rem; }
+            .company-info-row .info-row .ir-value { font-size: 0.8rem; word-break: break-all; }
+            .company-info-row .info-row .ir-value small { font-size: 0.67rem; }
+        }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<section class="section-padding" style="padding-top: 24px; padding-bottom: 24px;">
+    <div class="container">
+
+        <!-- ===== 문의 & 회사 정보 ===== -->
+        <div class="row g-4 mb-4 company-info-row">
+            <!-- 문의 전화 -->
+            <div class="col-6">
+                <h3 class="company-sec-title mb-3"><span class="bar"></span>문의 전화</h3>
+                <div class="info-card">
+                    <div class="info-row">
+                        <div class="ir-icon"><i class="bi bi-telephone-fill"></i></div>
+                        <div>
+                            <div class="ir-label">대표 · 이성희</div>
+                            <a class="ir-value" href="tel:010-3565-9741">010-3565-9741</a>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="ir-icon"><i class="bi bi-headset"></i></div>
+                        <div>
+                            <div class="ir-label">기술지원 · 원종인</div>
+                            <a class="ir-value" href="tel:010-2473-8303">010-2473-8303</a>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="ir-icon"><i class="bi bi-envelope-fill"></i></div>
+                        <div>
+                            <div class="ir-label">이메일</div>
+                            <a class="ir-value" href="mailto:jjang8517@naver.com">jjang8517@naver.com</a>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="ir-icon"><i class="bi bi-clock-fill"></i></div>
+                        <div>
+                            <div class="ir-label">업무 시간</div>
+                            <div class="ir-value">평일 09:00 ~ 18:00
+                                <small>점심시간 12:00 ~ 13:00 · 주말 · 공휴일 휴무</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 회사 정보 -->
+            <div class="col-6">
+                <h3 class="company-sec-title mb-3"><span class="bar"></span>회사 정보</h3>
+                <div class="info-card">
+                    <div class="info-row">
+                        <div class="ir-icon"><i class="bi bi-building"></i></div>
+                        <div>
+                            <div class="ir-label">상호</div>
+                            <div class="ir-value">(주)라이트드론</div>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="ir-icon"><i class="bi bi-card-text"></i></div>
+                        <div>
+                            <div class="ir-label">사업자등록번호</div>
+                            <div class="ir-value">621-06-23122</div>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="ir-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                        <div>
+                            <div class="ir-label">개인정보 책임자</div>
+                            <div class="ir-value">이성희</div>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="ir-icon"><i class="bi bi-geo-alt-fill"></i></div>
+                        <div>
+                            <div class="ir-label">주소</div>
+                            <div class="ir-value">부산광역시 강서구 과학산단1로60번길 31, 8동 301호
+                                <small>부산테크노파크</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 오시는 길 ===== -->
+        <div>
+            <h3 class="company-sec-title mb-3"><span class="bar"></span>오시는 길</h3>
+            <div class="company-map-wrap mb-3">
+                <iframe
+                    src="https://www.google.com/maps?q=%EB%B6%80%EC%82%B0%ED%85%8C%ED%81%AC%EB%85%B8%ED%8C%8C%ED%81%AC%20%EA%B0%95%EC%84%9C%EA%B5%AC&output=embed"
+                    loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                    title="라이트드론 오시는 길"></iframe>
+            </div>
+            <div class="text-center">
+                <a href="https://map.naver.com/v5/search/%EB%B6%80%EC%82%B0%ED%85%8C%ED%81%AC%EB%85%B8%ED%8C%8C%ED%81%AC"
+                   target="_blank" rel="noopener noreferrer"
+                   class="btn btn-outline-primary px-4">네이버 지도에서 보기</a>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

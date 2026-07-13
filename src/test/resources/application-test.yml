@@ -1,0 +1,42 @@
+# =====================================================================
+# 통합 테스트 전용 프로파일 (test)
+#
+# 목적: Spring Security 권한·CSRF 통합 테스트를 운영/로컬 DB 와 완전히 격리해 실행한다.
+#   - 인메모리 H2(PostgreSQL 호환 모드)를 사용하므로 실제 PostgreSQL/Oracle 에 접속하지 않는다.
+#   - 스키마는 Hibernate(ddl-auto=create-drop)가 매 컨텍스트마다 새로 만들고 종료 시 폐기한다.
+#   - Flyway 는 PostgreSQL 전용 V1 이 H2 에서 실행될 수 없으므로 끈다.
+#   - 각 테스트는 @Transactional 로 롤백되어 데이터가 남지 않는다.
+#
+# 주의: 이 파일은 src/test/resources 에 있어 배포 JAR(bootJar, src/main/resources)에는 포함되지 않는다.
+# =====================================================================
+spring:
+  datasource:
+    # MODE=PostgreSQL: PostgreSQL 문법 호환. DB_CLOSE_DELAY=-1: 커넥션 풀 동안 DB 유지.
+    url: jdbc:h2:mem:lightdrone-test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      # 테스트 DB 는 매번 새로 만들고 종료 시 폐기 (운영의 validate 와 무관, 격리 보장)
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        # 운영 application.yml 의 PostgreSQLDialect 를 H2 용으로 오버라이드
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: false
+
+  # PostgreSQL 전용 마이그레이션(V1)은 H2 에서 실행 불가 → 테스트에서는 Flyway 비활성
+  flyway:
+    enabled: false
+
+  thymeleaf:
+    cache: false
+
+logging:
+  level:
+    com.lightdrone: WARN
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN

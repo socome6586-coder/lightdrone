@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('회원가입 완료')}"></th:block>
+    <style>
+        .signup-complete-shell {
+            min-height: calc(100vh - 220px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 52px 16px 76px;
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, .13), transparent 30%),
+                linear-gradient(180deg, #f4f7fb 0%, #ffffff 65%);
+        }
+        .signup-complete-card {
+            width: 100%;
+            max-width: 780px;
+            background: #fff;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 28px 70px rgba(15, 23, 42, .12);
+            border: 1px solid rgba(226, 232, 240, .9);
+        }
+        .signup-complete-top {
+            padding: 42px 42px 30px;
+            background:
+                linear-gradient(135deg, #0f172a 0%, #1d4ed8 62%, #38bdf8 100%);
+            color: #fff;
+            position: relative;
+        }
+        .signup-complete-top::after {
+            content: "";
+            position: absolute;
+            right: -40px;
+            top: -40px;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.08);
+        }
+        .signup-complete-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.12);
+            border: 1px solid rgba(255,255,255,.16);
+            font-size: .82rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        .signup-complete-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin: 0 0 12px;
+            letter-spacing: -.04em;
+            position: relative;
+            z-index: 1;
+        }
+        .signup-complete-desc {
+            max-width: 500px;
+            font-size: 1rem;
+            line-height: 1.8;
+            color: rgba(255,255,255,.86);
+            margin: 0;
+            position: relative;
+            z-index: 1;
+        }
+        .signup-complete-body {
+            padding: 34px 42px 40px;
+        }
+        .signup-complete-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+        .signup-complete-meta-item {
+            padding: 18px 20px;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #f8fbff 0%, #f3f7fc 100%);
+            border: 1px solid #dbe6f3;
+        }
+        .signup-complete-meta-label {
+            font-size: .8rem;
+            color: #64748b;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .signup-complete-meta-value {
+            font-size: 1.05rem;
+            color: #0f172a;
+            font-weight: 800;
+            letter-spacing: -.02em;
+            word-break: break-all;
+        }
+        .signup-complete-message {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            padding: 18px 20px;
+            border-radius: 18px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 28px;
+        }
+        .signup-complete-message-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            background: #e8f1ff;
+            color: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .signup-complete-message-title {
+            font-size: .96rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .signup-complete-message-desc {
+            color: #64748b;
+            font-size: .9rem;
+            line-height: 1.7;
+            margin: 0;
+        }
+        .signup-complete-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .signup-complete-actions .btn {
+            min-width: 168px;
+            border-radius: 14px;
+            padding: 13px 18px;
+            font-size: .95rem;
+            font-weight: 800;
+            box-shadow: none !important;
+        }
+        @media (max-width: 768px) {
+            .signup-complete-top {
+                padding: 34px 24px 26px;
+            }
+            .signup-complete-body {
+                padding: 24px 24px 30px;
+            }
+            .signup-complete-title {
+                font-size: 1.8rem;
+            }
+            .signup-complete-meta {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 576px) {
+            .signup-complete-shell {
+                padding: 24px 12px 42px;
+            }
+            .signup-complete-card {
+                border-radius: 22px;
+            }
+            .signup-complete-top {
+                padding: 30px 20px 22px;
+            }
+            .signup-complete-body {
+                padding: 22px 20px 26px;
+            }
+            .signup-complete-title {
+                font-size: 1.55rem;
+            }
+            .signup-complete-desc {
+                font-size: .94rem;
+            }
+            .signup-complete-actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<th:block th:replace="~{layout/fragments :: navbar}"></th:block>
+
+<section class="signup-complete-shell">
+    <div class="signup-complete-card">
+        <div class="signup-complete-top">
+            <div class="signup-complete-badge">
+                <i class="bi bi-check2-circle"></i>
+                <span>회원가입이 정상적으로 완료되었습니다</span>
+            </div>
+            <h1 class="signup-complete-title">라이트드론에 오신 걸 환영합니다</h1>
+            <p class="signup-complete-desc">
+                <strong th:text="${signupName} ?: '회원'">회원</strong>님 계정이 안전하게 생성되었습니다.
+                이제 상품 주문, 문의, 마이페이지 기능을 바로 이용하실 수 있습니다.
+            </p>
+        </div>
+
+        <div class="signup-complete-body">
+            <div class="signup-complete-meta">
+                <div class="signup-complete-meta-item">
+                    <div class="signup-complete-meta-label"
+                         th:text="${signupProvider != null ? signupProvider + ' 계정' : '가입 아이디'}">가입 아이디</div>
+                    <div class="signup-complete-meta-value" th:text="${signupUsername}">lightdrone</div>
+                </div>
+                <div class="signup-complete-meta-item">
+                    <div class="signup-complete-meta-label">가입 완료일</div>
+                    <div class="signup-complete-meta-value" th:text="${signupCompletedAt}">2026.06.23 10:00</div>
+                </div>
+            </div>
+
+            <div class="signup-complete-message">
+                <div class="signup-complete-message-icon">
+                    <i class="bi bi-stars"></i>
+                </div>
+                <div>
+                    <div class="signup-complete-message-title">다음 단계 안내</div>
+                    <p class="signup-complete-message-desc">
+                        회원 정보와 배송지는 마이페이지에서 언제든 수정할 수 있고,
+                        바로 상품을 둘러보거나 주문을 진행하셔도 됩니다.
+                    </p>
+                </div>
+            </div>
+
+            <div class="signup-complete-actions">
+                <a th:href="@{/mypage}" class="btn btn-primary">
+                    <i class="bi bi-person-circle me-1"></i>마이페이지로 이동
+                </a>
+                <a th:href="@{/products}" class="btn btn-outline-primary">
+                    <i class="bi bi-bag-check me-1"></i>상품 보러가기
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<th:block th:replace="~{layout/fragments :: footer}"></th:block>
+</body>
+</html>

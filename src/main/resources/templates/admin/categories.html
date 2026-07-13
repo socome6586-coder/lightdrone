@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{layout/fragments :: head('카테고리 관리')}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/admin-console.css}">
+    <style>
+        .cat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .cat-card {
+            padding: 14px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            gap: 14px;
+            height: 100%;
+        }
+        .cat-body {
+            flex: 1 1 auto;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .cat-banner-preview {
+            position: relative;
+            flex: 0 0 auto;
+            width: 132px;
+            aspect-ratio: 3 / 4;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(77, 111, 220, 0.15);
+            background: linear-gradient(160deg, #eef3ff 0%, #d8e4ff 100%);
+        }
+        .cat-banner-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .cat-banner-fallback {
+            height: 100%;
+            padding: 11px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            color: #173168;
+            background:
+                radial-gradient(circle at top right, rgba(255,255,255,0.75), transparent 34%),
+                linear-gradient(160deg, #eef3ff 0%, #d7e2ff 100%);
+        }
+        .cat-banner-kicker {
+            font-size: 0.56rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            opacity: 0.72;
+            margin-bottom: 6px;
+        }
+        .cat-banner-title {
+            font-size: 0.86rem;
+            line-height: 1.25;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .cat-banner-subtitle {
+            font-size: 0.62rem;
+            line-height: 1.4;
+            color: #53627e;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .cat-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .cat-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .cat-actions form {
+            margin: 0;
+            display: inline-flex;
+        }
+        .cat-actions .ca-btn {
+            border: none;
+            background: none;
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 2px 1px;
+            line-height: 1.4;
+            cursor: pointer;
+            text-decoration: none;
+            transition: .12s ease;
+        }
+        .cat-actions .ca-btn:hover { text-decoration: underline; }
+        .ca-sep {
+            color: #ccd2dd;
+            font-size: 0.8rem;
+            user-select: none;
+        }
+        .ca-edit { color: var(--admin-primary); }
+        .ca-del { color: #dc2626; }
+        .cat-order {
+            font-size: 0.74rem;
+            color: #7a8393;
+        }
+        .cat-home-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .cat-home-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.71rem;
+            font-weight: 700;
+        }
+        .cat-home-badge.is-on {
+            background: rgba(27, 94, 32, 0.12);
+            color: #1b5e20;
+        }
+        .cat-home-badge.is-off {
+            background: rgba(55, 65, 81, 0.1);
+            color: #4b5563;
+        }
+        .cat-banner-link {
+            display: block;
+            margin-top: -2px;
+            color: #4d6fdc;
+            font-size: 0.74rem;
+            word-break: break-all;
+            text-decoration: none;
+        }
+        .cat-banner-link:hover { text-decoration: underline; }
+        .cat-sub-title {
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+        .cat-sub-block {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .cat-add-sub {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            border: 1.5px dashed rgba(22, 163, 74, 0.5);
+            border-radius: 8px;
+            background: rgba(22, 163, 74, 0.04);
+            color: #15803d;
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 9px 12px;
+            cursor: pointer;
+            transition: .15s ease;
+        }
+        .cat-add-sub:hover {
+            background: rgba(22, 163, 74, 0.12);
+            border-color: #16a34a;
+            color: #166534;
+        }
+        .admin-chip {
+            border-radius: 8px;
+            padding: 4px 7px 4px 10px;
+            font-size: 0.77rem;
+            gap: 5px;
+        }
+        .chip-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 5px;
+            line-height: 1;
+            font-size: 0.72rem;
+            border: 0;
+            background: transparent;
+        }
+        .chip-btn:hover { background: rgba(77, 111, 220, 0.16); }
+        .cat-current-banner {
+            max-width: 220px;
+        }
+        @media (max-width: 1199.98px) {
+            .cat-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 575.98px) {
+            .cat-banner-preview { width: 104px; }
+            .cat-card { padding: 12px; gap: 12px; }
+        }
+    </style>
+</head>
+<body class="admin-console-body">
+<div class="admin-dashboard-shell">
+    <th:block th:replace="~{admin/fragments :: sidebar('categories')}"></th:block>
+
+    <main class="admin-dashboard-main">
+        <th:block th:replace="~{admin/fragments :: topbar('카테고리 관리', '메인 카테고리와 세로 배너 이미지를 함께 관리합니다.')}"></th:block>
+
+        <div class="admin-section-grid">
+            <div th:if="${successMsg}" class="alert alert-success mb-0"><span th:text="${successMsg}"></span></div>
+            <div th:if="${errorMsg}" class="alert alert-danger mb-0"><span th:text="${errorMsg}"></span></div>
+
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div>
+                        <h3 class="admin-panel-title">카테고리 목록</h3>
+                        <div class="admin-panel-subtitle">총 <span th:text="${#lists.size(categories)}">0</span>개의 카테고리</div>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a th:href="@{/admin/products}" class="btn btn-outline-secondary">상품 관리로 이동</a>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">카테고리 추가</button>
+                    </div>
+                </div>
+
+                <div class="admin-panel-body">
+                    <div class="cat-grid" th:if="${!#lists.isEmpty(categories)}">
+                        <section class="admin-action-card cat-card" th:each="cat : ${categories}">
+                            <div class="cat-banner-preview">
+                                <img th:if="${cat.homeBannerImageUrl != null and !#strings.isEmpty(cat.homeBannerImageUrl)}"
+                                     th:src="@{${cat.homeBannerImageUrl}}" th:alt="${cat.name}">
+                                <div th:unless="${cat.homeBannerImageUrl != null and !#strings.isEmpty(cat.homeBannerImageUrl)}"
+                                     class="cat-banner-fallback">
+                                    <div class="cat-banner-kicker">HOME CATEGORY</div>
+                                    <div class="cat-banner-title"
+                                         th:text="${cat.homeBannerTitle != null and !#strings.isEmpty(cat.homeBannerTitle) ? cat.homeBannerTitle : cat.name}">카테고리 배너</div>
+                                    <div class="cat-banner-subtitle"
+                                         th:text="${cat.homeBannerSubtitle != null and !#strings.isEmpty(cat.homeBannerSubtitle) ? cat.homeBannerSubtitle : '세로형 배너를 등록하면 메인 페이지 왼쪽 배너로 노출됩니다.'}">배너 설명</div>
+                                </div>
+                            </div>
+
+                            <div class="cat-body">
+                            <div class="cat-head">
+                                <div>
+                                    <div class="admin-action-icon mb-2"><i class="bi bi-folder2-open"></i></div>
+                                    <h4 class="fw-bold mb-1" th:text="${cat.name}">카테고리명</h4>
+                                    <div class="cat-order" th:text="'노출 순서 ' + ${cat.displayOrder}">노출 순서 0</div>
+                                </div>
+                                <div class="cat-actions">
+                                    <button class="ca-btn ca-edit"
+                                            th:data-cat-id="${cat.id}"
+                                            th:data-cat-name="${cat.name}"
+                                            th:data-cat-order="${cat.displayOrder}"
+                                            th:data-home-visible="${cat.homeVisible}"
+                                            th:data-home-banner-visible="${cat.homeBannerVisible}"
+                                            th:data-home-section-description="${cat.homeSectionDescription}"
+                                            th:data-home-banner-title="${cat.homeBannerTitle}"
+                                            th:data-home-banner-subtitle="${cat.homeBannerSubtitle}"
+                                            th:data-home-banner-link-url="${cat.homeBannerLinkUrl}"
+                                            th:data-home-banner-image-url="${cat.homeBannerImageUrl}"
+                                            onclick="openEditCatModal(this)">수정</button>
+                                    <span class="ca-sep" aria-hidden="true">|</span>
+                                    <form th:action="@{/admin/categories/{id}/delete(id=${cat.id})}" method="post"
+                                          onsubmit="return confirm('카테고리를 삭제하면 세부 카테고리도 함께 삭제됩니다. 계속할까요?')">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                        <button type="submit" class="ca-btn ca-del">삭제</button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div class="cat-home-badges">
+                                <span class="cat-home-badge" th:classappend="${cat.homeVisible} ? ' is-on' : ' is-off'"
+                                      th:text="${cat.homeVisible} ? '메인 노출 ON' : '메인 노출 OFF'">메인 노출 ON</span>
+                                <span class="cat-home-badge" th:classappend="${cat.homeBannerVisible} ? ' is-on' : ' is-off'"
+                                      th:text="${cat.homeBannerVisible} ? '배너 노출 ON' : '배너 노출 OFF'">배너 노출 ON</span>
+                                <span th:if="${cat.homeBannerImageUrl != null and !#strings.isEmpty(cat.homeBannerImageUrl)}"
+                                      class="cat-home-badge is-on">세로 배너 등록됨</span>
+                            </div>
+
+                            <a th:if="${cat.homeBannerLinkUrl != null and !#strings.isEmpty(cat.homeBannerLinkUrl)}"
+                               th:href="${cat.homeBannerLinkUrl}" target="_blank" class="cat-banner-link"
+                               th:text="${cat.homeBannerLinkUrl}">/products</a>
+
+                            <div class="cat-sub-block">
+                                <div class="cat-sub-title">세부 카테고리</div>
+                                <div class="d-flex flex-wrap gap-2" th:if="${!#lists.isEmpty(cat.subcategories)}">
+                                    <div class="admin-chip" th:each="sub : ${cat.subcategories}">
+                                        <span th:text="${sub.name}">세부 카테고리</span>
+                                        <span class="text-muted" th:text="'(' + ${sub.displayOrder} + ')'"></span>
+                                        <button type="button" class="chip-btn text-primary"
+                                                th:data-sub-id="${sub.id}"
+                                                th:data-sub-name="${sub.name}"
+                                                th:data-sub-order="${sub.displayOrder}"
+                                                th:data-cat-id="${cat.id}"
+                                                onclick="openEditSubModal(this)">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <form th:action="@{/admin/categories/{catId}/subcategories/{subId}/delete(catId=${cat.id},subId=${sub.id})}"
+                                              method="post" class="d-inline"
+                                              onsubmit="return confirm('세부 카테고리를 삭제하시겠습니까?')">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                            <button type="submit" class="chip-btn text-danger">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <div th:if="${#lists.isEmpty(cat.subcategories)}" class="text-muted small">
+                                    등록된 세부 카테고리가 없습니다.
+                                </div>
+                            </div>
+
+                            <button class="cat-add-sub"
+                                    th:data-cat-id="${cat.id}"
+                                    th:data-cat-name="${cat.name}"
+                                    onclick="openAddSubModal(this)"><i class="bi bi-plus-lg"></i>세부 카테고리 추가</button>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div th:if="${#lists.isEmpty(categories)}" class="admin-empty">
+                        <i class="bi bi-tags fs-3 d-block mb-2"></i>
+                        등록된 카테고리가 없습니다.
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{/admin/categories}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <div class="modal-header">
+                    <h5 class="modal-title">카테고리 추가</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">카테고리명 <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" maxlength="100" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">정렬 순서</label>
+                        <input type="number" name="displayOrder" class="form-control" value="0" min="0">
+                        <div class="form-text">배너 설정은 생성 후 수정에서 이어서 등록하면 됩니다.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary">추가</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="editCatForm" method="post" enctype="multipart/form-data">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <div class="modal-header">
+                    <h5 class="modal-title">카테고리 수정</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">카테고리명</label>
+                            <input type="text" id="editCatName" name="name" class="form-control" maxlength="100" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">정렬 순서</label>
+                            <input type="number" id="editCatOrder" name="displayOrder" class="form-control" min="0">
+                        </div>
+                    </div>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" id="editHomeVisible" name="homeVisible" value="true">
+                        <label class="form-check-label fw-semibold" for="editHomeVisible">메인 홈페이지 카테고리 섹션 노출</label>
+                    </div>
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" id="editHomeBannerVisible" name="homeBannerVisible" value="true">
+                        <label class="form-check-label fw-semibold" for="editHomeBannerVisible">메인 카테고리 배너 이미지 노출</label>
+                        <div class="form-text">끄면 홈페이지 메인에서 왼쪽 세로 배너 없이 상품만 출력됩니다.</div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">제목 설명</label>
+                        <input type="text" id="editHomeSectionDescription" name="homeSectionDescription" class="form-control" maxlength="200"
+                               placeholder="예) 브이로그 촬영부터 전문 촬영까지">
+                        <div class="form-text">홈 화면에서 카테고리 제목 옆에 회색 작은 글씨로 표시됩니다.</div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">메인 배너 제목</label>
+                            <input type="text" id="editHomeBannerTitle" name="homeBannerTitle" class="form-control" maxlength="120">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">메인 배너 링크</label>
+                            <input type="text" id="editHomeBannerLinkUrl" name="homeBannerLinkUrl" class="form-control"
+                                   placeholder="/products?category=농업용 또는 https://...">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">메인 배너 설명</label>
+                            <textarea id="editHomeBannerSubtitle" name="homeBannerSubtitle" class="form-control" rows="3" maxlength="300"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">세로형 메인 배너 이미지</label>
+                            <input type="file" id="editHomeBannerImageFile" name="homeBannerImageFile" class="form-control" accept="image/*">
+                            <div class="form-text">권장 비율: 3:4 또는 4:5</div>
+                        </div>
+                        <div class="col-12 d-none" id="editHomeBannerCurrentWrap">
+                            <label class="form-label fw-semibold">현재 배너</label>
+                            <div class="cat-banner-preview cat-current-banner mb-2">
+                                <img id="editHomeBannerCurrentImage" alt="현재 카테고리 배너">
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="removeHomeBannerImage" name="removeHomeBannerImage" value="true">
+                                <label class="form-check-label" for="removeHomeBannerImage">현재 배너 이미지 제거</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addSubModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addSubForm" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addSubModalTitle">세부 카테고리 추가</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">세부 카테고리명</label>
+                        <input type="text" name="name" class="form-control" maxlength="100" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">정렬 순서</label>
+                        <input type="number" name="displayOrder" class="form-control" value="0" min="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary">추가</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editSubModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editSubForm" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <div class="modal-header">
+                    <h5 class="modal-title">세부 카테고리 수정</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">세부 카테고리명</label>
+                        <input type="text" id="editSubName" name="name" class="form-control" maxlength="100" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">정렬 순서</label>
+                        <input type="number" id="editSubOrder" name="displayOrder" class="form-control" min="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<th:block th:replace="~{admin/fragments :: admin-scripts}"></th:block>
+<script>
+function openEditCatModal(btn) {
+    document.getElementById('editCatName').value = btn.dataset.catName || '';
+    document.getElementById('editCatOrder').value = btn.dataset.catOrder || 0;
+    document.getElementById('editHomeVisible').checked = btn.dataset.homeVisible === 'true';
+    document.getElementById('editHomeBannerVisible').checked = btn.dataset.homeBannerVisible !== 'false';
+    document.getElementById('editHomeSectionDescription').value = btn.dataset.homeSectionDescription || '';
+    document.getElementById('editHomeBannerTitle').value = btn.dataset.homeBannerTitle || '';
+    document.getElementById('editHomeBannerSubtitle').value = btn.dataset.homeBannerSubtitle || '';
+    document.getElementById('editHomeBannerLinkUrl').value = btn.dataset.homeBannerLinkUrl || '';
+    document.getElementById('removeHomeBannerImage').checked = false;
+    document.getElementById('editHomeBannerImageFile').value = '';
+    document.getElementById('editCatForm').action = '/admin/categories/' + btn.dataset.catId + '/edit';
+
+    const currentWrap = document.getElementById('editHomeBannerCurrentWrap');
+    const currentImage = document.getElementById('editHomeBannerCurrentImage');
+    if (btn.dataset.homeBannerImageUrl) {
+        currentImage.src = btn.dataset.homeBannerImageUrl;
+        currentWrap.classList.remove('d-none');
+    } else {
+        currentImage.removeAttribute('src');
+        currentWrap.classList.add('d-none');
+    }
+    new bootstrap.Modal(document.getElementById('editCategoryModal')).show();
+}
+
+function openAddSubModal(btn) {
+    document.getElementById('addSubModalTitle').textContent = btn.dataset.catName + ' 세부 카테고리 추가';
+    document.getElementById('addSubForm').action = '/admin/categories/' + btn.dataset.catId + '/subcategories';
+    new bootstrap.Modal(document.getElementById('addSubModal')).show();
+}
+
+function openEditSubModal(btn) {
+    document.getElementById('editSubName').value = btn.dataset.subName || '';
+    document.getElementById('editSubOrder').value = btn.dataset.subOrder || 0;
+    document.getElementById('editSubForm').action = '/admin/categories/' + btn.dataset.catId + '/subcategories/' + btn.dataset.subId + '/edit';
+    new bootstrap.Modal(document.getElementById('editSubModal')).show();
+}
+</script>
+</body>
+</html>
