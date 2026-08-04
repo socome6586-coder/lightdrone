@@ -3,13 +3,14 @@
 드론·부품 판매 쇼핑몰 [lightdrone.co.kr](https://lightdrone.co.kr)의 소스 저장소.
 실제 운영 중인 서비스로, 상품·주문·결제·회원·관리자 콘솔·모바일 UX·SEO까지 운영에 필요한 기능을 단계적으로 고도화했다.
 
-이 저장소는 공개용 스냅샷이며, 내부 운영 문서와 배포 스크립트가 포함된 개발 히스토리(커밋 300여 개)는 비공개 저장소에서 관리한다.
+이 저장소는 공개용 스냅샷이며, 내부 운영 문서와 배포 스크립트가 포함된 개발 히스토리(커밋 340여 개)는 비공개 저장소에서 관리한다.
 
 | | |
 |---|---|
 | 서비스 | 드론·부품 판매 B2B/B2C 쇼핑몰 (운영 중) |
-| 기간 | 2026.06 ~ 2026.07 |
-| 스택 | Java 21 · Spring Boot 3.4 · Spring Security · Thymeleaf · JPA · PostgreSQL · Flyway · Toss Payments · OAuth2 · Coolsms · Brevo · WebSocket |
+| 기간 | 2026.05 ~ 진행 중 |
+| 규모 | 테이블 29개 · 엔드포인트 190여 개 · 통합 테스트 196건 |
+| 스택 | Java 21 (빌드 JDK 25) · Spring Boot 3.4 · Spring Security · Thymeleaf · JPA · PostgreSQL · Flyway · Toss Payments · OAuth2 · Coolsms · Brevo · WebSocket |
 
 ## 배경
 
@@ -68,6 +69,12 @@
 **관리자 콘솔**
 - 상품·주문·회원·문의·후기·공지·자료실·팝업 통합 관리
 - 매출 통계, CSV 내보내기, 재고 알림, 관리자 활동 로그, 통합검색
+- 주문 인쇄(주문내역서·거래명세서 등 5종), 고객용 양식에는 관리자 메모·결제키 미노출
+
+**CS 운영**
+- 1:1 실시간 상담(WebSocket) — 종료된 상담과 탈퇴 회원의 상담도 이력으로 조회
+- 문의 처리 상태(접수/처리중/답변완료/보류)와 담당자 배정으로 중복 대응 방지
+- 재고 입출고 이력 — 주문 차감·취소 복원·수동 조정을 사유와 함께 기록해 재고 변동 추적
 
 **홈 패널 관리**
 - 홈 히어로 슬라이드 6개 슬롯(좌·중앙 1~3·우·추가 슬라이드)을 코드 수정 없이 관리자 콘솔에서 구성
@@ -76,8 +83,51 @@
 
 **보안·배포**
 - 모든 시크릿 환경변수 외부화, 배포 JAR에 비밀값 패턴이 남으면 빌드를 실패시키는 `verifyNoSecretsInJar` 태스크
-- 권한·CSRF·리소스 소유권 통합 테스트, jsoup 기반 입력 새니타이징, 업로드 파일 시그니처 검증
+- 통합 테스트 196건 — 권한·CSRF·리소스 소유권, 결제 승인/취소 멱등, 주문 재고 정합성, 화면 렌더링
+- jsoup 기반 입력 새니타이징, 업로드 파일 시그니처 검증
 - Flyway 마이그레이션 (운영 `ddl-auto=validate`)
+
+## 데이터 모델
+
+테이블 29개, 외래키 23개. 아래는 관계로 연결된 테이블만 추린 개요이며, 실제 운영 스키마에서 추출했다.
+
+```mermaid
+erDiagram
+    products ||--o{ cart_items : "product"
+    members ||--o{ cart_items : "member"
+    members ||--o{ chat_messages : "sender"
+    chat_rooms ||--o{ chat_messages : "room"
+    members ||--o{ chat_rooms : "member"
+    members ||--o{ chat_rooms : "admin"
+    members ||--o{ inquiries : "member"
+    members ||--o{ manuals : "member"
+    members ||--o{ notices : "member"
+    orders ||--o{ order_items : "order"
+    products ||--o{ order_items : "product"
+    members ||--o{ orders : "member"
+    products ||--o{ product_category_links : "product"
+    products ||--o{ product_content_images : "product"
+    products ||--o{ product_main_images : "product"
+    products ||--o{ product_options : "product"
+    product_categories ||--o{ product_subcategories : "category"
+    members ||--o{ qna : "member"
+    qna ||--o{ qna_images : "qna"
+    reviews ||--o{ review_images : "review"
+    products ||--o{ reviews : "product"
+    members ||--o{ reviews : "member"
+    products ||--o{ stock_histories : "product"
+```
+
+| 도메인 | 주요 테이블 |
+|---|---|
+| 회원·등급 | `members`, `business_grade_policy` |
+| 상품·카테고리·재고 | `products`, `product_options`, `product_categories`, `stock_histories` |
+| 주문·결제 | `orders`, `order_items`, `cart_items`, `custom_payments` |
+| 게시판·콘텐츠 | `notices`, `qna`, `reviews`, `manuals`, `support_videos` |
+| 고객 응대 | `inquiries`, `chat_rooms`, `chat_messages` |
+| 운영·로그 | `activity_logs`, `visitor_logs`, `popups`, `home_panel_settings` |
+
+**스냅샷 컬럼을 둔 이유.** 주문 항목은 상품을 참조하면서도 주문 시점의 상품명·가격을 따로 저장한다. 상품이 수정·삭제돼도 과거 주문서의 내용이 바뀌면 안 되기 때문이다. 같은 이유로 상담 기록은 회원 탈퇴 시 개인정보(회원 FK)만 끊고 이름 스냅샷과 대화 내용을 남기며, 재고 이력도 상품 삭제 후 상품명이 남도록 했다.
 
 ## 기술적 의사결정
 
@@ -89,7 +139,9 @@
 
 ## 실행
 
-로컬 PostgreSQL과 JDK 21 이상이 필요하다. `application.yml`에는 비밀값이 없으며 모든 시크릿은 환경변수로 주입한다.
+로컬 PostgreSQL과 JDK 25가 필요하다(Gradle 툴체인 기준). 바이트코드는 Java 21로 컴파일한다.
+
+`application.yml`에는 비밀값이 없으며 모든 시크릿은 환경변수로 주입한다. 유일하게 기본값이 들어 있는 `KAKAO_JS_KEY`는 브라우저에 노출되는 것을 전제로 하는 클라이언트 키로, 실제 보호는 Kakao 콘솔의 도메인 등록으로 이뤄진다.
 
 ```bash
 # 방법 A — 로컬 설정 파일 (권장)
